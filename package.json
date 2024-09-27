@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "fast-xml-parser": "^4.5.0",
+    "formidable": "^3.5.1",
+    "fs": "^0.0.1-security",
+    "jszip": "^3.10.1"
+  }
+}
