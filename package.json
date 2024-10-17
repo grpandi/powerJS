@@ -1,32 +1,25 @@
 {
   "name": "powerjs",
-  "version": "1.0.0",
-  "description": "Lib to read and write Powerpoint Presentation",
-  "main": "lib\\powerJS.js",
-  "directories": {
-    "lib": "lib"
-  },
+  "version": "0.0.1",
+  "main": "./dist/index.js",
+  "module": "./dist/index-mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "tsup": "^8.3.0",
+    "typescript": "^5.6.3"
   },
   "dependencies": {
     "fast-xml-parser": "^4.5.0",
-    "formidable": "^3.5.1",
     "fs": "^0.0.1-security",
-    "jszip": "^3.10.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/grpandi/powerJS.git"
-  },
-  "keywords": [
-    "powerpoint",
-    "slides"
-  ],
-  "author": "Pandian",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/grpandi/powerJS/issues"
-  },
-  "homepage": "https://github.com/grpandi/powerJS#readme"
+    "jszip": "^3.10.1",
+    "ts-test": "file:"
+  }
 }
