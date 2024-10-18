@@ -1,6 +1,11 @@
 export type Coord = number | '${number}%' //for inches or in % 
 export interface Position {x?: Coord,y?: Coord,h?: Coord,w?: Coord}
+export interface HueClr {attr_hue?: number,attr_sat?: Coord,attr_lum?: Coord}
+export interface RGB {r?: number,g?: Coord,b?: Coord}
 export type HexColor = string
+export interface clrProps {alpha?:Coord}
+export interface gsLstProps{pos?:string, fill?:SolidFillProps}
+export interface LinGrad{attr_ang:string, attr_scaled:string}
 export interface FillProps{fill?:HexColor}
 export type ThemeColor = 'tx1' | 'tx2' | 'bg1' | 'bg2' | 'accent1' | 'accent2' | 'accent3' | 'accent4' | 'accent5' | 'accent6'
 export type Color = HexColor | ThemeColor
@@ -8,42 +13,40 @@ export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
 
 
+// Shape properties
 export interface ShapeProp{
 	id: string | number,
 	name:string,
-	pos?:Position,
-	prstGeom?:string,
-	fill?:ShapeFillProps,
+	pos:Position,
+	prstGeom?:string,//todo
+	custGeom?:string,//todo
+	effect?:string //todo
+	solidFill?:SolidFillProps,
+	gradFill?:GradFillProps
+	pattFill?:string //todo
+	imgFill?:string,//todo
 	shadow?:ShadowProps,
 	border?:BorderProps,
 	text?:TextProps
 }
-export interface ShapeFillProps {
-	/**
-	 * Fill color
-	 * - `HexColor` or `ThemeColor`
-	 * @example 'FF0000' // hex color (red)
-	 * @example pptx.SchemeColor.text1 // Theme color (Text1)
-	 */
-	color?: Color
-	/**
-	 * Transparency (percent)
-	 * - MS-PPT > Format Shape > Fill & Line > Fill > Transparency
-	 * - range: 0-100
-	 * @default 0
-	 */
-	transparency?: number
-	/**
-	 * Fill type
-	 * @default 'solid'
-	 */
-	type?: 'none' | 'solid'
 
-	/**
-	 * Transparency (percent)
-	 * @deprecated v3.3.0 - use `transparency`
-	 */
-	alpha?: number
+export interface ShapeStyle{}
+export interface TextShape{}
+export interface SolidFillProps {
+	hslClr?:HueClr,
+	prstClr?:string,
+	schemeClr?:string,
+	scrgbClr?:RGB,
+	srgbClr?:string,
+	sysClr?:string
+}
+export interface GradFillProps{
+	gsLst:[gsLstProps],
+	lin:LinGrad,
+	path:'',//todo
+	tileRect:'',//todo
+	attr_flip?:string,
+	attr_rotWithShape?:string
 }
 export interface ShadowProps {
 	/**
@@ -111,3 +114,8 @@ export interface BorderProps {
 export interface TextProps {
 
 }
+
+// extention List
+export interface extList{}
+// Non visual properties
+export interface NvShapeProps{}
