@@ -4,13 +4,13 @@ import {Shape} from './shape'
 export class Slide{
     // slide sizes are in DXA
     // - 914400 EMUs is 1 inch
-    _slide:number = 1
+     _slide:number = 1
     _slideObjects:any = new Map()
     _layoutObjects:any ={}
-    _masterObjects:any
-    _slideRel:any
-    _masterShapes:any
-    _slideShapes:any
+    _masterObjects:any = {}
+    _slideRel:any = {}
+    _masterShapes:any = []
+    _slideShapes:any=[]
     
 
     getAllSlides(){

@@ -5,7 +5,7 @@
         "esModuleInterop":true,
         "strictNullChecks":true,
         "target": "ES2022",
-        "moduleResolution": "node",
+        "moduleResolution": "Node10",
         "module":"CommonJS",
         "declaration": true,
         "isolatedModules": true,

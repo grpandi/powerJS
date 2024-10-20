@@ -6,7 +6,7 @@ export class Shape{
     // slide sizes are in DXA
     // - 914400 EMUs is 1 inch
     _shapes:any={};
-    _props: ShapeProp = {id:'0', name:'0',prstGeom:''};
+    _props: ShapeProp = {id:'0', name:'0',pos: {x:0, y:0, h:0, w:0},prstGeom:''};
     
 
     constructor(){

@@ -4,6 +4,7 @@
   "main": "./dist/index.js",
   "module": "./dist/index-mjs",
   "types": "./dist/index.d.ts",
+  
   "scripts": {
     "build": "tsup"
   },
@@ -12,14 +13,14 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@types/node": "^22.7.5",
+    "@types/node": "^22.7.6",
     "tsup": "^8.3.0",
     "typescript": "^5.6.3"
   },
   "dependencies": {
     "fast-xml-parser": "^4.5.0",
+    "@types/node": "^22.7.6",
     "fs": "^0.0.1-security",
-    "jszip": "^3.10.1",
-    "ts-test": "file:"
+    "jszip": "^3.10.1"
   }
 }

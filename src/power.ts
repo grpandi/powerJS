@@ -2,10 +2,14 @@
 // var JSZip = require('jszip')
 // var slide = require('./slide')
 
-const { XMLParser, XMLBuilder, XMLValidator} = require("fast-xml-parser");
 import jszip from 'jszip'
-import * as fs from "fs";
-import {Slide} from './slides'
+import {Slide} from './slide'
+import {XMLParser, XMLBuilder, XMLValidator} from 'fast-xml-parser'
+
+
+export const myPromise = new Promise<number>((resolve, reject) => {
+  resolve(0)
+});
 
 
 
@@ -36,61 +40,55 @@ export class Pjs{
     private _slideMaster_rels={}
 
 
+  
   async readFile(files:any){
-    console.log(typeof(files))
-    let f = fs.readFileSync(files.filetoupload[0].filepath)
-    this._zip = await zipInput.loadAsync(f)
- 
-    this._zip.folder('ppt/slideLayouts')?.forEach(async (path:string,file:string)=>{
-        if(!path.includes('rels')){
-            let a = await this._zip.files['ppt/slideLayouts/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-            this.slide._layoutObjects.set(path,a)
-        }
-        })
-        console.log(this.slide._layoutObjects)
-
+        this._zip = await zipInput.loadAsync(files)
+        this._zip.folder('ppt/slideLayouts')?.forEach(async (path:string,file:any)=>{
+            if(!path.includes('rels')){
+                let a = await this._zip.files['ppt/slideLayouts/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+                // this.slide._layoutObjects.set(path,a)
+                this.slide._slideObjects[path] = a
+            }
+            })
+        
     
-
-     this._zip.folder('ppt/slideLayouts/_rels').forEach(async (path:string,file:string)=>{
-      if(!path.includes('rels')){
-        let a = await this._zip.files['ppt/slideLayouts/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-        this._slideLayouts_rels.set(path,a)
-      }
-     })
-     this._zip.folder('ppt/slides').forEach(async (path:string,file:string)=>{
-      if(!path.includes('rels')){
-        let a = await this._zip.files['ppt/slides/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-        this.slide._slideObjects[path] = a
-      }
-     })
-     this._zip.folder('ppt/slideMasters').forEach(async (path:string,file:string)=>{
-      if(!path.includes('rels')){
-        let a = await this._zip.files['ppt/slideMasters/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-        this.slide._masterObjects[path] = a
-      }
-     })
-
-     this._zip.folder('ppt/slides/_rels').forEach(async (path:string,file:string)=>{
-      if(path.includes('rels')){
-        let a = await this._zip.files['ppt/slides/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-        this.slide._slideRel[path] = a
-      }
-     })
+         this._zip.folder('ppt/slideLayouts/_rels').forEach(async (path:string,file:string)=>{
+          if(!path.includes('rels')){
+            let a = await this._zip.files['ppt/slideLayouts/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+            this._slideLayouts_rels.set(path,a)
+          }
+         })
+         this._zip.folder('ppt/slides').forEach(async (path:string,file:string)=>{
+          if(!path.includes('rels')){
+            let a = await this._zip.files['ppt/slides/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+            this.slide._slideObjects[path] = a
+          }
+         })
+         this._zip.folder('ppt/slideMasters').forEach(async (path:string,file:string)=>{
+          if(!path.includes('rels')){
+            let a = await this._zip.files['ppt/slideMasters/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+            this.slide._masterObjects[path] = a
+          }
+         })
     
-      this._app = await this._zip.files['docProps/app.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._core = await this._zip.files['docProps/core.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._rels = await this._zip.files['_rels/.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._contentType = await this._zip.files['[Content_Types].xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._presentation = await this._zip.files['ppt/presentation.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._presProps = await this._zip.files['ppt/presProps.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._tableStyles = await this._zip.files['ppt/tableStyles.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._viewProp = await this._zip.files['ppt/viewProps.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._presentation_xml_rels = await this._zip.files['ppt/_rels/presentation.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      // this.slideMaster = await this.zip.files['ppt/slideMasters/slideMaster1.xml'].async('text').then((txt)=>{return(parser.parse(txt));})
-      this._slideMaster_rels = await this._zip.files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-      this._theme = await this._zip.files['ppt/theme/theme1.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
-    
-      console.log(this._theme)
+         this._zip.folder('ppt/slides/_rels').forEach(async (path:string,file:string)=>{
+          if(path.includes('rels')){
+            let a = await this._zip.files['ppt/slides/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+            this.slide._slideRel[path] = a
+          }
+         })
+        
+          this._app = await this._zip.files['docProps/app.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._core = await this._zip.files['docProps/core.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._rels = await this._zip.files['_rels/.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._contentType = await this._zip.files['[Content_Types].xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._presentation = await this._zip.files['ppt/presentation.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._presProps = await this._zip.files['ppt/presProps.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._tableStyles = await this._zip.files['ppt/tableStyles.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._viewProp = await this._zip.files['ppt/viewProps.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._presentation_xml_rels = await this._zip.files['ppt/_rels/presentation.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._slideMaster_rels = await this._zip.files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._theme = await this._zip.files['ppt/theme/theme1.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
   }
 
   getSize(){
@@ -99,5 +97,7 @@ export class Pjs{
 
 
 }
+
+
 
 
