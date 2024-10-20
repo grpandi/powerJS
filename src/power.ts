@@ -40,9 +40,10 @@ export class Pjs{
     private _slideMaster_rels={}
 
 
-  
+
   async readFile(files:any){
-        this._zip = await zipInput.loadAsync(files)
+    return new Promise <string> (async (res, rej)=>{
+      this._zip = await zipInput.loadAsync(files)
         this._zip.folder('ppt/slideLayouts')?.forEach(async (path:string,file:any)=>{
             if(!path.includes('rels')){
                 let a = await this._zip.files['ppt/slideLayouts/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
@@ -89,6 +90,11 @@ export class Pjs{
           this._presentation_xml_rels = await this._zip.files['ppt/_rels/presentation.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
           this._slideMaster_rels = await this._zip.files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
           this._theme = await this._zip.files['ppt/theme/theme1.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+
+          res('ReadFile')
+
+    })
+        
   }
 
   getSize(){

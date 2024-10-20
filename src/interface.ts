@@ -4,35 +4,35 @@ export interface HueClr {attr_hue?: number,attr_sat?: Coord,attr_lum?: Coord}
 export interface RGB {r?: number,g?: Coord,b?: Coord}
 export type HexColor = string
 export interface clrProps {alpha?:Coord}
-export interface gsLstProps{pos?:string, fill?:SolidFillProps}
+export interface gsLstProps{pos?:string, fill?:ClrProps}
 export interface LinGrad{attr_ang:string, attr_scaled:string}
 export interface FillProps{fill?:HexColor}
 export type ThemeColor = 'tx1' | 'tx2' | 'bg1' | 'bg2' | 'accent1' | 'accent2' | 'accent3' | 'accent4' | 'accent5' | 'accent6'
 export type Color = HexColor | ThemeColor
 export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
+export type BGtype = 'noFill'| 'solidFill'|'gradFill'|'patternFill'
 
 
-// Shape properties
-export interface ShapeProp{
-	id: string | number,
-	name:string,
-	pos:Position,
-	prstGeom?:string,//todo
-	custGeom?:string,//todo
-	effect?:string //todo
-	solidFill?:SolidFillProps,
-	gradFill?:GradFillProps
-	pattFill?:string //todo
-	imgFill?:string,//todo
-	shadow?:ShadowProps,
-	border?:BorderProps,
-	text?:TextProps
+// background
+export interface BGProps{
+	bgPr?:FillProps,
+	bgRef?:ClrProps,
+	attr_bwMode: string
 }
+export interface BackgroundProps{}
+export interface BackgroundRefProsp{}
 
-export interface ShapeStyle{}
-export interface TextShape{}
-export interface SolidFillProps {
+
+// style Properties
+export interface FillProps{
+	blipFill?:ImgFillProps,
+	gradFill?:GradFillProps,
+	noFill?:'',
+	solidFill:ClrProps,
+	pattFill:PatternFillProps
+}
+export interface ClrProps {
 	hslClr?:HueClr,
 	prstClr?:string,
 	schemeClr?:string,
@@ -48,6 +48,28 @@ export interface GradFillProps{
 	attr_flip?:string,
 	attr_rotWithShape?:string
 }
+export interface ImgFillProps{}
+export interface PatternFillProps{}
+// Shape properties
+export interface ShapeProp{
+	id: string | number,
+	name:string,
+	pos:Position,
+	prstGeom?:string,//todo
+	custGeom?:string,//todo
+	effect?:string //todo
+	solidFill?:ClrProps,
+	gradFill?:GradFillProps
+	pattFill?:string //todo
+	imgFill?:string,//todo
+	shadow?:ShadowProps,
+	border?:BorderProps,
+	text?:TextProps
+}
+
+export interface ShapeStyle{}
+export interface TextShape{}
+
 export interface ShadowProps {
 	/**
 	 * shadow type

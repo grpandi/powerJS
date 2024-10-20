@@ -1,7 +1,8 @@
 import {getNested} from './util'
 import {Shape} from './shape'
+import { inherits } from 'util'
 
-export class Slide{
+export class Slide {
     // slide sizes are in DXA
     // - 914400 EMUs is 1 inch
      _slide:number = 1
@@ -11,7 +12,11 @@ export class Slide{
     _slideRel:any = {}
     _masterShapes:any = []
     _slideShapes:any=[]
-    
+    constructor(n?:number){
+        if (typeof(n)!='undefined'){
+            this._slide=n
+        }        
+    }
 
     getAllSlides(){
         return this._slideObjects
@@ -62,6 +67,13 @@ export class Slide{
         return this._slideShapes
         
 
+    }
+
+    getBackground(){
+        // 1. get bg object from slide or slide layout or slide master
+        // 2. check bg props or bg ref
+        // 3. get bg type
+        // 4. get bg props
     }
 
 
