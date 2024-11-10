@@ -120,7 +120,4 @@ export function getBG(bb:object):BGProps{
     let bg:BGProps = Object.create(bb)
     return bg
 }
-export var BG:any = BG({
-    bg:'test',
-    bgf: function(){return'true'}
-})
+

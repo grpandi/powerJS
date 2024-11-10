@@ -8,7 +8,7 @@ export interface gsLstProps{pos?:string, fill?:ClrProps}
 export interface LinGrad{attr_ang:string, attr_scaled:string}
 export interface FillProps{fill?:HexColor}
 export type ThemeColor = 'tx1' | 'tx2' | 'bg1' | 'bg2' | 'accent1' | 'accent2' | 'accent3' | 'accent4' | 'accent5' | 'accent6'
-export type Color = HexColor | ThemeColor
+// export type Color = HexColor | ThemeColor
 export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
 export type BGtype = 'noFill'| 'solidFill'|'gradFill'|'patternFill'
@@ -16,9 +16,38 @@ export type BGtype = 'noFill'| 'solidFill'|'gradFill'|'patternFill'
 
 // background
 export interface BGProps{
-	'p:bgPr'?:FillProps,
-	'p:bgRef'?:ClrProps,
-	attr_bwMode: string,
+	'p_bgPr'?:FillProps,
+	'p_bgRef'?:ClrProps,
+	// 'p_bgPr'?:any,
+	// 'p_bgRef'?:any,
+	type?:string,
+	attr_bwMode?: string,
+}
+
+export class BackGround{
+	'p_bgPr'?:any
+	'p_bgRef'?:any
+	type:string
+
+	constructor(obj:object){
+		this.type = ''
+		if('p:bgRef' in obj){
+			this.p_bgRef = obj['p:bgRef']
+			this.type='color'
+		}
+		if('p:bgPr' in obj){
+			this.p_bgRef = obj['p:bgPr']
+		}
+	}
+	
+	set bg(obj:object){
+		if('p:bgRef' in obj){
+			this.p_bgRef = obj['p:bgRef']
+		}
+		if('p:bgPr' in obj){
+			this.p_bgRef = obj['p:bgPr']
+		}
+	}
 }
 export interface BackgroundProps{}
 export interface BackgroundRefProsp{}
@@ -39,6 +68,24 @@ export interface ClrProps {
 	scrgbClr?:RGB,
 	srgbClr?:string,
 	sysClr?:string
+}
+
+export class Fill{
+	// p:blipFill
+	p_blipFill:any
+	// p:gradFill
+	p_gradFill:any
+	// p:noFill
+	p_noFill:any
+	// solidFill
+	p_solidFill:any
+	// pattFill
+	p_pattFill:any
+	
+	
+}
+export class Color{
+
 }
 export interface GradFillProps{
 	gsLst:[gsLstProps],

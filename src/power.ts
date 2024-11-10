@@ -5,7 +5,7 @@
 import jszip from 'jszip'
 import {Slide} from './slide'
 import {XMLParser, XMLBuilder, XMLValidator} from 'fast-xml-parser'
-import {getNested, BG} from './util'
+import {getNested} from './util'
 import { BGProps } from './interface'
 
 
@@ -136,6 +136,9 @@ export class Pjs{
     console.log(bg)
 
     // 2. check bg props or bg ref
+    if('p:bgRef' in bg){
+      
+    }
 
     // 3. get bg type
     // 4. get bg props
