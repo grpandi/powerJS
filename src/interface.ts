@@ -16,9 +16,9 @@ export type BGtype = 'noFill'| 'solidFill'|'gradFill'|'patternFill'
 
 // background
 export interface BGProps{
-	bgPr?:FillProps,
-	bgRef?:ClrProps,
-	attr_bwMode: string
+	'p:bgPr'?:FillProps,
+	'p:bgRef'?:ClrProps,
+	attr_bwMode: string,
 }
 export interface BackgroundProps{}
 export interface BackgroundRefProsp{}

@@ -1,5 +1,6 @@
 import jszip from 'jszip'
 import * as fs from "fs";
+import { BGProps } from './interface';
 
 export function sayHellow(){
     console.log("TS Test")
@@ -114,3 +115,12 @@ export function getColor(obj:any):any{
     return clr
 
 }
+
+export function getBG(bb:object):BGProps{
+    let bg:BGProps = Object.create(bb)
+    return bg
+}
+export var BG:any = BG({
+    bg:'test',
+    bgf: function(){return'true'}
+})

@@ -1,42 +1,37 @@
 import {getNested} from './util'
 import {Shape} from './shape'
-import { inherits } from 'util'
+import {Pjs} from './power'
 
-export class Slide {
+export class Slide  {
     // slide sizes are in DXA
     // - 914400 EMUs is 1 inch
-     _slide:number = 1
-    _slideObjects:any = new Map()
-    _layoutObjects:any ={}
-    _masterObjects:any = {}
-    _slideRel:any = {}
-    _masterShapes:any = []
-    _slideShapes:any=[]
+     slidenr:number = 1
+    protected _slideObj:any ={}
+    protected _slideM:any = {}
+    protected _slideL:any={}
+    protected _masterShapes:any = []
+    protected _slideShapes:any=[]
     constructor(n?:number){
         if (typeof(n)!='undefined'){
-            this._slide=n
+            this.slidenr=n
         }        
     }
 
-    getAllSlides(){
-        return this._slideObjects
+    getSlideLayoutName(slideRel:any, slideNr:number){
+        let slr =  slideRel['slide'+slideNr+'.xml.rels']['Relationships']['Relationship']['@_Target']
+        let layoutName =  slr.split('/')[2]
+        return layoutName
     }
-    getSlide(n:number){
-        return this._slideObjects['slide'+n+'.xml']
+    getMasterLayoutName(slideLayoutRel:any, slideNr:number){
+        // let smr =  slideLayoutRel['Relationships']['Relationship']['@_Target']
+        let smr =  slideLayoutRel['slideLayout'+slideNr+'.xml.rels']['Relationships']['Relationship']['@_Target']
+        let masterName =  smr.split('/')[2]
+        return masterName
+        // return (this._slideMasters[masterName])
     }
 
-    getMasterslide(n:number){
-        return this._masterObjects['slideMaster'+n+'.xml']
-    }
-
-    getSlideLayout(n:number){
-        let a =  this._slideRel['slide'+n+'.xml.rels']['Relationships']['Relationship']['@_Target']
-        let layoutName =  a.split('/')[2]
-        return (this._layoutObjects[layoutName])
-    }
-    
-    getMasterShapes(n:number){
-        let layout = this.getMasterslide(n)
+    getMasterShapes(slideMasters:object, n:number){
+        let layout = getNested(slideMasters,'slideMaster'+n+'.xml')
         let ShapeTree = layout['p:sldMaster']['p:cSld']['p:spTree']['p:sp']
         for (let sp in ShapeTree){
             let shape = new Shape()
@@ -48,8 +43,8 @@ export class Slide {
     }
 
     getLayoutShapes(){}
-    getSlideShapes(n:number){
-        let layout = this.getSlide(n)
+    getSlideShapes(slides:object,n:number){
+        let layout = getNested(slides,'slide'+n+'.xml')
         // let shapeTree = layout['p:sld']['p:cSld']['p:spTree']['p:sp']
         let shapeTree = getNested(layout, 'p:sld','p:cSld','p:spTree','p:sp')
         for (let sp in shapeTree){
@@ -69,12 +64,7 @@ export class Slide {
 
     }
 
-    getBackground(){
-        // 1. get bg object from slide or slide layout or slide master
-        // 2. check bg props or bg ref
-        // 3. get bg type
-        // 4. get bg props
-    }
+    
 
 
 }
