@@ -29,15 +29,17 @@ export class BackGround{
 	'p_bgRef'?:any
 	type:string
 
-	constructor(obj:object){
+	constructor(obj?:object){
 		this.type = ''
-		if('p:bgRef' in obj){
-			this.p_bgRef = obj['p:bgRef']
-			this.type='color'
-		}
-		if('p:bgPr' in obj){
-			this.p_bgRef = obj['p:bgPr']
-		}
+		if(typeof(obj) !='undefined'){
+			if('p:bgRef' in obj){
+				this.p_bgRef = obj['p:bgRef']
+				this.type='color'
+			}
+			if('p:bgPr' in obj){
+				this.p_bgRef = obj['p:bgPr']
+			}
+		}		
 	}
 	
 	set bg(obj:object){
@@ -68,6 +70,7 @@ export interface ClrProps {
 	scrgbClr?:RGB,
 	srgbClr?:string,
 	sysClr?:string
+	
 }
 
 export class Fill{
@@ -84,9 +87,7 @@ export class Fill{
 	
 	
 }
-export class Color{
 
-}
 export interface GradFillProps{
 	gsLst:[gsLstProps],
 	lin:LinGrad,
