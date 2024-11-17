@@ -11,7 +11,7 @@ export type ThemeColor = 'tx1' | 'tx2' | 'bg1' | 'bg2' | 'accent1' | 'accent2' |
 // export type Color = HexColor | ThemeColor
 export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
-export type BGtype = 'noFill'| 'solidFill'|'gradFill'|'patternFill'
+export type BGtype = 'noFill'| 'solidFill'|'gradientFill'|'patternFill'|'imageFill'
 
 
 // background

@@ -3,9 +3,9 @@
 // var slide = require('./slide')
 
 import jszip from 'jszip'
-import {Slide} from './slide'
+import {Slide, Slides} from './slide'
 import {XMLParser, XMLBuilder, XMLValidator} from 'fast-xml-parser'
-import {getNested} from './util'
+import {getNested, Bg, Color} from './util'
 import { BGProps } from './interface'
 
 
@@ -32,7 +32,7 @@ export class Pjs{
     private _slideLayouts_rels:any= {}
     private _slides_rels:any = {}
     slide = new Slide()
-    private _theme = {}
+    private _theme:any = {}
     private _rels = {}
     private _presProps={}
     private _tableStyles={}
@@ -43,31 +43,32 @@ export class Pjs{
     private _presentation_xml_rels={}
     private _slideMaster_rels:any={}
 
-
-
+    
   async readFile(files:any){
     return new Promise <string> (async (res, rej)=>{
       this._zip = await zipInput.loadAsync(files)
+
+
         this._zip.folder('ppt/slideLayouts')?.forEach(async (path:string,file:any)=>{
             if(!path.includes('rels')){
                 let a = await this._zip.files['ppt/slideLayouts/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
                 this._slideLayouts[path]=a
             }
-            })
+        })
         
     
-         this._zip.folder('ppt/slideLayouts/_rels').forEach(async (path:string,file:string)=>{
-          if(path.includes('rels')){
-            let a = await this._zip.files['ppt/slideLayouts/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-            this._slideLayouts_rels[path]=a
-          }
-         })
-         this._zip.folder('ppt/slides').forEach(async (path:string,file:string)=>{
-          if(!path.includes('rels')){
-            let a = await this._zip.files['ppt/slides/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
-            this._slides[path]=a
-          }
-         })
+        this._zip.folder('ppt/slideLayouts/_rels').forEach(async (path:string,file:string)=>{
+        if(path.includes('rels')){
+          let a = await this._zip.files['ppt/slideLayouts/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._slideLayouts_rels[path]=a
+        }
+        })
+        this._zip.folder('ppt/slides').forEach(async (path:string,file:string)=>{
+        if(!path.includes('rels')){
+          let a = await this._zip.files['ppt/slides/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this._slides[path]=a
+        }
+        })
          this._zip.folder('ppt/slides/_rels').forEach(async (path:string,file:string)=>{
           if(path.includes('rels')){
             let a = await this._zip.files['ppt/slides/_rels/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
@@ -121,6 +122,7 @@ export class Pjs{
     // 1. get bg object from slide or slide layout or slide master
     let slideObj = getNested(this._slides,'slide'+n+'.xml')
     let bg:BGProps = getNested(slideObj,'p:sld','p:cSld','p:bg')
+    let clrMap:any
     if(typeof(bg)=='undefined'){
       let layoutName = this.slide.getSlideLayoutName(this._slides_rels,n)
       let slideLayout = this._slideLayouts[layoutName]
@@ -129,19 +131,19 @@ export class Pjs{
     if(typeof(bg)=='undefined'){
       let masterName = this.slide.getMasterLayoutName(this._slideLayouts_rels,n)
       let slideMaster = this._slideMasters[masterName]
-      console.log(slideMaster)
+      // console.log(slideMaster)
       bg = getNested(slideMaster,'p:sldMaster','p:cSld','p:bg')
+      clrMap = getNested(slideMaster,'p:sldMaster','p:clrMap')
     }
+    let bgVal = new Bg(bg)
 
-    console.log(bg)
-
-    // 2. check bg props or bg ref
-    if('p:bgRef' in bg){
-      
+    // get color from theme if it is scheme color
+    if(bgVal.type =='theme'){
+      let themeClr = getNested(this._theme,'a:theme','a:themeElements','a:clrScheme','a:'+clrMap['@_'+bgVal.val])
+      let clr = new Color(themeClr)
+      bgVal.val = clr.getColor()
     }
-
-    // 3. get bg type
-    // 4. get bg props
+    return {type: bgVal.type, val:bgVal.val}   
 }
 
 }

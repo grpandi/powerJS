@@ -69,5 +69,34 @@ export class Slide  {
 
 }
 
+export class Slides{
+    private _masters:any
+    private _layouts:any
+    private _slides:any
+    private _theme:any
+
+    set master(a:any){
+
+    }
+    set layout(a:any){
+
+    }
+
+    set slides(a:any){
+
+    }
+
+    set theme(a:any){
+
+    }
+
+
+    
+
+
+
+
+}
+
 
 
