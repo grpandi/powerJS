@@ -64,15 +64,16 @@ export class Bg {
     type = ''
     val:any
 
-    constructor(a?:any){
-        if(typeof(a)=='object'){
-            if('p:bgPr'in a){               
-                let fill = new Fill(a['p:bgPr'])
+
+    constructor(bgobj?:any, clrMap?:any, theme?:any){
+        if(typeof(bgobj)=='object'){
+            if('p:bgPr'in bgobj){               
+                let fill = new Fill(bgobj['p:bgPr'], clrMap, theme)
                 this.type = fill.type
                 this.val = fill.val
             }
-            if('p:bgRef'in a){
-                let color = new Color(a['p:bgRef'])
+            if('p:bgRef'in bgobj){
+                let color = new Color(bgobj['p:bgRef'], clrMap, theme)
                 this.type = color.clr.type
                 this.val = color.getColor()
             }
@@ -83,31 +84,32 @@ export class Bg {
 export class Fill {
     type:BGtype='noFill'
     val:any;
-    constructor(a?:any){
-        if (typeof(a)=='object'){
+    constructor(fillObj?:any, clrMap?:any, theme?:any){
+        if (typeof(fillObj)=='object'){
 
             // solidFill
-            if('a:solidFill' in a){ 
+            if('a:solidFill' in fillObj){ 
                 this.type='solidFill'       
-                let color = new Color(a['a:solidFill'])
+                let color = new Color(fillObj['a:solidFill'], clrMap, theme)
                 this.val = color.getColor()
             }
 
             // gradFill
 
-            if('a:gradFill' in a){
+            if('a:gradFill' in fillObj){
+                this.type = "gradientFill"
                 this.val = {gradient:[], linang:''}
-                let gradStopObj = getNested(a, 'a:gradFill','a:gsLst','a:gs')
+                let gradStopObj = getNested(fillObj, 'a:gradFill','a:gsLst','a:gs')
                 for(let gs in gradStopObj){
-                    let clrClass = new Color(gradStopObj[gs])
+                    let clrClass = new Color(gradStopObj[gs], clrMap, theme)
                     let clr = clrClass.getColor()
-                    let gsPos = gradStopObj[gs]['@_pos']
+                    let gsPos = parseInt(gradStopObj[gs]['@_pos'])/1000
                     this.val.gradient.push({pos:gsPos,clr})
                 }
-                if(getNested(a, 'a:gradFill','@_ang') !='undefined'){
-                    this.val.linang = parseInt(getNested(a, 'a:gradFill','@_ang'))/10000   
-                }
-                     
+                if(getNested(fillObj, 'a:gradFill','a:lin','@_ang') !='undefined'){
+                    // convert arc length to degrees (arc length / 60)
+                    this.val.linang = parseInt(getNested(fillObj, 'a:gradFill','a:lin','@_ang'))/60000 
+                }                     
             }
 
             // patternFill (TBD)
@@ -115,14 +117,14 @@ export class Fill {
 
 
             // ImageFill 
-            if('a:blipFill' in a){
+            if('a:blipFill' in fillObj){
                 this.type = 'imageFill'
                 this.val = {imgPath:'', stretch:'', tile:''}
-                if(getNested(a, 'a:blipFill','a:blip','r:embed') !='undefined'){
-                    this.val.imgPath = getNested(a, 'a:blipFill','a:blip','r:embed') 
+                if(getNested(fillObj, 'a:blipFill','a:blip','r:embed') !='undefined'){
+                    this.val.imgPath = getNested(fillObj, 'a:blipFill','a:blip','r:embed') 
                 }
-                if(getNested(a, 'a:blipFill','a:blip','r:link') !='undefined'){
-                    this.val.imgPath = getNested(a, 'a:blipFill','a:blip','r:link') 
+                if(getNested(fillObj, 'a:blipFill','a:blip','r:link') !='undefined'){
+                    this.val.imgPath = getNested(fillObj, 'a:blipFill','a:blip','r:link') 
                 }
 
             }
@@ -131,12 +133,12 @@ export class Fill {
 
 
         }
-        if(typeof(a)=='string'){
-            if(a=='noFill'){this.type= a}
-            if(a=='solidFill'){this.type=a}
-            if(a=='gradientFill'){this.type=a}
-            if(a=='patternFill'){this.type=a}
-            if(a=='imageFill'){this.type=a}            
+        if(typeof(fillObj)=='string'){
+            if(fillObj=='noFill'){this.type= fillObj}
+            if(fillObj=='solidFill'){this.type=fillObj}
+            if(fillObj=='gradientFill'){this.type=fillObj}
+            if(fillObj=='patternFill'){this.type=fillObj}
+            if(fillObj=='imageFill'){this.type=fillObj}            
         }
     }
 }
@@ -149,7 +151,10 @@ export class Color{
 	p_srgbClr?:any
 	p_sysClr?:any
 	type:string =''
+    clrMap:any
+    theme:any
 	clr:any={type:'', val:''}
+    lumOff:number = 0
     presetColors:any={'indianred':'#CD5C5C','lightcoral':'#F08080','salmon':'#FA8072','darksalmon':'#E9967A','lightsalmon':'#FFA07A',
         'crimson':'#DC143C','red':'#FF0000','firebrick':'#B22222','darkred':'#8B0000','pink':'#FFC0CB','lightpink':'#FFB6C1',
         'hotpink':'#FF69B4','deeppink':'#FF1493','mediumvioletred':'#C71585','palevioletred':'#DB7093',
@@ -183,64 +188,133 @@ export class Color{
         'graytext':'#808080','highlight':'#000080','highlighttext':'#FFFFFF','inactiveborder':'#C0C0C0','inactivecaption':'#808080',
         'inactivecaptiontext':'#C0C0C0','infobackground':'#FFFFFF','infotext':'#000000','menu':'#C0C0C0','menutext':'#000000',
         'scrollbar':'#C0C0C0','threeddarkshadow':'#000000','threedface':'#C0C0C0','threedhighlight':'#FFFFFF',
-        'threedlightshadow':'#C0C0C0','threedshadow':'#808080','window':'#FFFFFF','windowframe':'#000000','windowtext':'#000000'}
+        'threedlightshadow':'#C0C0C0','threedshadow':'#808080','window':'#ffffff','windowframe':'#000000','windowtext':'#000000'}
 
-	constructor(obj?:any){
-		if(typeof(obj) !='undefined'){
-			if('a:hslClr' in obj){
-				this.a_hslClr = obj['a:hslClr'];
+	constructor(clrObj?:any,clrMap?:any, theme?:any){
+		if(typeof(clrMap) !='undefined'){this.clrMap = clrMap}
+        if(typeof(theme) !='undefined'){this.theme = theme}
+        if(typeof(clrObj) !='undefined'){
+			if('a:hslClr' in clrObj){
+				this.a_hslClr = clrObj['a:hslClr'];
 				let hsl={hue:0, saturation:0, lightness:0}
 				if('@_hue'in this.a_hslClr){hsl.hue = parseInt(this.a_hslClr['@_hue'])/10000}
 				if('@_sat'in this.a_hslClr){hsl.saturation = parseInt(this.a_hslClr['@_sat'])}
 				if('@_lum'in this.a_hslClr){hsl.lightness =parseInt(this.a_hslClr['@_lum'])}
-				if(this.a_hslClr['a:hue']in this.a_hslClr){hsl.hue = this.a_hslClr['a:hue']['@_val']}
+				if('a:hue'in this.a_hslClr){hsl.hue = this.a_hslClr['a:hue']['@_val']}
+                if('a:lumOff'in this.a_hslClr){this.lumOff = parseInt(this.a_hslClr['a:lumOff'])/1000}
 				this.clr.type='hsl'
 				this.clr.val = hsl
 			}
-			if('a:prstClr' in obj){
-                this.p_prstClr= obj['a:prstClr'];
+			if('a:prstClr' in clrObj){
+                this.p_prstClr= clrObj['a:prstClr'];
                 this.clr.type='preset'
                 this.clr.val=this.p_prstClr['@_val']
+                if('a:lumOff'in this.p_prstClr){this.lumOff = parseInt(this.p_prstClr['a:lumOff']['@_val'])/1000}
             }
-            if('a:sysClr' in obj){
-                this.p_sysClr= obj['a:sysClr'];
+            if('a:sysClr' in clrObj){
+                this.p_sysClr= clrObj['a:sysClr'];
                 this.clr.type='sysclr'
                 this.clr.val=this.p_sysClr['@_val']
+                if('a:lumOff'in this.p_sysClr){this.lumOff = parseInt(this.p_sysClr['a:lumOff']['@_val'])/1000}
             }
 
-			if('a:schemeClr' in obj){
-                this.p_schemeClr= obj['a:schemeClr'];
+			if('a:schemeClr' in clrObj){
+                this.p_schemeClr= clrObj['a:schemeClr'];
                 this.clr.type= 'theme'
-                this.clr.val = this.p_schemeClr['@_val']
+                this.clr.val = this.p_schemeClr['@_val'];
+                console.log(this.p_schemeClr['a:lumOff'])
+                if('a:lumOff'in this.p_schemeClr){this.lumOff = parseInt(this.p_schemeClr['a:lumOff']['@_val'])/1000}
             }
-            if('a:srgbClr' in obj){
-                this.p_srgbClr= obj['a:srgbClr']
+            if('a:srgbClr' in clrObj){
+                this.p_srgbClr= clrObj['a:srgbClr']
                 this.clr.type= 'hex'
-                this.clr.val = this.p_srgbClr['@val']
+                this.clr.val = this.p_srgbClr['@_val']
+                if('a:lumOff'in this.p_srgbClr){this.lumOff = parseInt(this.p_srgbClr['a:lumOff']['@_val'])/1000}
             }
-			if('a:scrgbClr' in obj){
-                this.p_scrgbClr= obj['a:scrgbClr']
+			if('a:scrgbClr' in clrObj){
+                this.p_scrgbClr= clrObj['a:scrgbClr']
                 this.clr.type ='rgb'
                 let r = parseInt(this.p_scrgbClr['p:rgb']['@_r'])
                 let g =  parseInt(this.p_scrgbClr['p:rgb']['@_g'])
                 let b =  parseInt(this.p_scrgbClr['p:rgb']['@_b'])
                 this.clr.val = [r,g,b]
+                if('a:lumOff'in this.p_scrgbClr){this.lumOff = parseInt(this.p_scrgbClr['a:lumOff']['@_val'])/1000}
             }
 			
 			
 		}	
 	}
 
-    getColor(){
-        if(this.clr.type=='hsl'){return this.HSLToHex(this.clr.val.h, this.clr.val.s, this.clr.val.l)}
-        if(this.clr.type=='preset'){return this.presetColors[this.clr.val.toLowerCase()]}
-        if(this.clr.type=='sysclr'){return this.systemColors[this.clr.val.toLowerCase()]}
-        if(this.clr.type=='hex'){return this.clr.val}
-        if(this.clr.type=='theme'){return this.clr.val}
-        if(this.clr.type=='rgb'){return this.rgbtoHex(this.clr.type.r,this.clr.type.g, this.clr.type.b)}
+    getColor():any{
+        if(this.clr.type=='hsl'){
+            return this.HSLToHex(this.clr.val.h, this.clr.val.s, this.clr.val.l + this.lumOff)
+        }
+        if(this.clr.type=='preset'){
+            let clrVal:any = this.presetColors[this.clr.val.toLowerCase()]
+            if(this.lumOff>0){                
+                // convert to hex to rgb
+                clrVal = this.hexToRGB(clrVal)
+                // convert rgb to hsl
+                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
+                // convert to Hex by replacing lumOff
+                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
+            }
+            return clrVal
+        }
+        if(this.clr.type=='sysclr'){
+            let clrVal:any = this.systemColors[this.clr.val.toLowerCase()]
+            if(this.lumOff>0){                
+                // convert to hex to rgb
+                clrVal = this.hexToRGB(clrVal)
+                // convert rgb to hsl
+                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
+                // convert to Hex by replacing lumOff
+                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
+            }
+            return clrVal
+        }
+        if(this.clr.type=='hex'){
+            let clrVal:any = this.clr.val
+            if(this.lumOff>0){                
+                // convert to hex to rgb
+                clrVal = this.hexToRGB(clrVal)
+                // convert rgb to hsl
+                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
+                // convert to Hex by replacing lumOff
+                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
+            }
+            return clrVal
+        }
+        if(this.clr.type=='theme'){
+            let themeClrName = getNested(this.theme,'a:'+this.clrMap['@_'+this.clr.val])
+            let thmclr = new Color(themeClrName)
+            let clrVal:any = thmclr.getColor()
+            if(clrVal.length==6){
+                clrVal = "#"+ clrVal
+            }
+            if(this.lumOff>0){                
+                // convert to hex to rgb
+                clrVal = this.hexToRGB(clrVal)
+                // convert rgb to hsl
+                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
+                // convert to Hex by replacing lumOff
+                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
+            }
+            return clrVal
+        }
+        if(this.clr.type=='rgb'){
+            let clrVal:any = "";
+            if(this.lumOff>0){                
+                // convert rgb to hsl
+                clrVal = this.rgbToHSL(this.clr.type.r, this.clr.type.g, this.clr.type.b)
+                // convert to Hex by replacing lumOff
+                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
+            }
+            return clrVal
+        }
     }
 
-	hsl_rgb(h:any, s:any, l:any) {
+	private hsl_rgb(h:any, s:any, l:any) {
             // Scale h to 0..1 with modulo for negative values too
             h = (((h / 360) % 1) + 1) % 1;
             if (s === 0)
@@ -264,7 +338,25 @@ export class Color{
             return c;
     }
 
-    HSLToHex(h:any,s:any,l:any):string {
+    private hexToRGB(h:string) {
+        let r:any = 0, g:any = 0, b:any = 0;
+      
+        // 3 digits
+        if (h.length == 4) {
+          r = "0x" + h[1] + h[1];
+          g = "0x" + h[2] + h[2];
+          b = "0x" + h[3] + h[3];
+      
+        // 6 digits
+        } else if (h.length == 7) {
+          r = "0x" + h[1] + h[2];
+          g = "0x" + h[3] + h[4];
+          b = "0x" + h[5] + h[6];
+        }
+        return {'r':+r, 'g': +g,'b': +b}
+      }
+
+    private HSLToHex(h:any,s:any,l:any):String {
         s /= 100;
         l /= 100;
       
@@ -303,11 +395,53 @@ export class Color{
       
         return "#" + r + g + b;
     }
-    rgbtoHex(r:number,g:number,b:number){
+    private rgbtoHex(r:number,g:number,b:number):String{
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-      }
-    presetToHex(){
+    }
+    private presetToHex(){
 
+    }
+
+    private rgbToHSL(r:any,g:any,b:any) {
+        // Make r, g, and b fractions of 1
+        r /= 255;
+        g /= 255;
+        b /= 255;
+      
+        // Find greatest and smallest channel values
+        let cmin = Math.min(r,g,b),
+            cmax = Math.max(r,g,b),
+            delta = cmax - cmin,
+            h = 0,
+            s = 0,
+            l = 0;
+    
+    // calculate hue
+        if (delta == 0)
+            h = 0;
+            // Red is max
+            else if (cmax == r)
+            h = ((g - b) / delta) % 6;
+            // Green is max
+            else if (cmax == g)
+            h = (b - r) / delta + 2;
+            // Blue is max
+            else
+            h = (r - g) / delta + 4;
+
+        h = Math.round(h*60);
+        // Make negative hues positive behind 360°
+        if (h < 0)
+            h += 360;
+    // Calculate lightness
+        l = (cmax + cmin) / 2;
+    // Calculate saturation
+        s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+    
+        // Multiply l and s by 100
+        s = +(s * 100).toFixed(1);
+        l = +(l * 100).toFixed(1);
+        return {'h': h, 's':s, 'l':l}
     }
 
 	

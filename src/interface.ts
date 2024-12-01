@@ -73,20 +73,6 @@ export interface ClrProps {
 	
 }
 
-export class Fill{
-	// p:blipFill
-	p_blipFill:any
-	// p:gradFill
-	p_gradFill:any
-	// p:noFill
-	p_noFill:any
-	// solidFill
-	p_solidFill:any
-	// pattFill
-	p_pattFill:any
-	
-	
-}
 
 export interface GradFillProps{
 	gsLst:[gsLstProps],

@@ -7,6 +7,7 @@ import {Slide, Slides} from './slide'
 import {XMLParser, XMLBuilder, XMLValidator} from 'fast-xml-parser'
 import {getNested, Bg, Color} from './util'
 import { BGProps } from './interface'
+import { Canvas } from './canvas'
 
 
 export const myPromise = new Promise<number>((resolve, reject) => {
@@ -31,8 +32,9 @@ export class Pjs{
     private _slideMasters:any = {}
     private _slideLayouts_rels:any= {}
     private _slides_rels:any = {}
-    slide = new Slide()
     private _theme:any = {}
+    private _colorMap:any = {}
+    public themeColors:any = {}
     private _rels = {}
     private _presProps={}
     private _tableStyles={}
@@ -42,6 +44,12 @@ export class Pjs{
     private _core = {}
     private _presentation_xml_rels={}
     private _slideMaster_rels:any={}
+    public width=1780
+    public height=720
+    public cnv:Canvas | undefined
+    public aspectRatio=1
+
+    slide = new Slide()
 
     
   async readFile(files:any){
@@ -103,46 +111,61 @@ export class Pjs{
           this._presentation_xml_rels = await this._zip.files['ppt/_rels/presentation.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
           // this._slideMaster_rels = await this._zip.files['ppt/slideMasters/_rels/slideMaster1.xml.rels'].async('text').then((txt:string)=>{return(parser.parse(txt));})
           this._theme = await this._zip.files['ppt/theme/theme1.xml'].async('text').then((txt:string)=>{return(parser.parse(txt));})
+          this.themeColors = getNested(this._theme,'a:theme','a:themeElements','a:clrScheme')
 
+          // convert EMU to inch to pixel considering 96 ppi
+          this.width = parseInt(this._presentation['p:presentation']['p:sldSz']['@_cx'])/(914400)*96
+          this.height = parseInt(this._presentation['p:presentation']['p:sldSz']['@_cy'])/(914400)*96
+          this.aspectRatio = this.width/this.height
           res('ReadFile')
 
     })
         
   }
 
-  getSize(){
-    return this._presentation['p:presentation']['p:sldSz']
+  
+  // set canvas, calculate Aspect ratios for ppt and canvas
+  set setCanvas(cnv:HTMLCanvasElement) {
+    this.cnv = new Canvas(cnv);
+    this.cnv.widthRatio=cnv.width/this.width
+    this.cnv.heightRatio=cnv.height/this.height
+    this.cnv.aspectRatio=cnv.width/cnv.height
+
+    if(this.aspectRatio>this.cnv.aspectRatio){
+      this.cnv.heightOffset=(cnv.height-(cnv.width/this.aspectRatio))/2
+    }
+    if(this.aspectRatio<this.cnv.aspectRatio){
+      this.cnv.widthOffset=(cnv.width-(cnv.height*this.aspectRatio))/2
+    }
   }
-
-
-
   // Slide functions
 
   getSlideBG(n:number){
     // 1. get bg object from slide or slide layout or slide master
     let slideObj = getNested(this._slides,'slide'+n+'.xml')
     let bg:BGProps = getNested(slideObj,'p:sld','p:cSld','p:bg')
-    let clrMap:any
+
+    // 2. get Color map from respective Master
+    let masterName = this.slide.getMasterLayoutName(this._slideLayouts_rels,n)
+    let slideMaster = this._slideMasters[masterName]
+    let clrMap = getNested(slideMaster,'p:sldMaster','p:clrMap')
+    console.log(clrMap)
+
+    // 3. get bg object by checking in order of Slide, Layout and Master
+
+    
     if(typeof(bg)=='undefined'){
       let layoutName = this.slide.getSlideLayoutName(this._slides_rels,n)
       let slideLayout = this._slideLayouts[layoutName]
       bg = getNested(slideLayout,'p:sldLayout','p:cSld','p:bg')
     }
     if(typeof(bg)=='undefined'){
-      let masterName = this.slide.getMasterLayoutName(this._slideLayouts_rels,n)
-      let slideMaster = this._slideMasters[masterName]
-      // console.log(slideMaster)
       bg = getNested(slideMaster,'p:sldMaster','p:cSld','p:bg')
-      clrMap = getNested(slideMaster,'p:sldMaster','p:clrMap')
     }
-    let bgVal = new Bg(bg)
 
-    // get color from theme if it is scheme color
-    if(bgVal.type =='theme'){
-      let themeClr = getNested(this._theme,'a:theme','a:themeElements','a:clrScheme','a:'+clrMap['@_'+bgVal.val])
-      let clr = new Color(themeClr)
-      bgVal.val = clr.getColor()
-    }
+    console.log(bg)
+    let bgVal = new Bg(bg,clrMap,this.themeColors)
+
     return {type: bgVal.type, val:bgVal.val}   
 }
 
