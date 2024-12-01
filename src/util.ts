@@ -154,6 +154,7 @@ export class Color{
     clrMap:any
     theme:any
 	clr:any={type:'', val:''}
+    
     lumOff:number = 0
     presetColors:any={'indianred':'#CD5C5C','lightcoral':'#F08080','salmon':'#FA8072','darksalmon':'#E9967A','lightsalmon':'#FFA07A',
         'crimson':'#DC143C','red':'#FF0000','firebrick':'#B22222','darkred':'#8B0000','pink':'#FFC0CB','lightpink':'#FFB6C1',
