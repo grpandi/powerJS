@@ -402,7 +402,7 @@ export class Stroke{
     fill =new Fill()
     constructor(){
         this.w = 9525;
-        this.cap = "flat" //flat, round, square
+        this.cap = "butt" //flat(butt), round, square
         this.cmpd = "sng" //single(sng), Double(dbl), ThickThin(thickThin), ThinThick(thinThick), Triple(tri)
         this.algn ="ctr"
         this.fill =new Fill()

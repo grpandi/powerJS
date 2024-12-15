@@ -173,6 +173,15 @@ export class Pjs{
 
   drawSlide(n:number){
 
+    // getSlideBG
+
+    // CreateBGShape
+    let BGShape= new Shape()
+    BGShape.x=0
+    BGShape.y=0
+    BGShape.w=this.width
+    BGShape.h=this.height
+
   }
 
   drawShape(shape:Shape){
