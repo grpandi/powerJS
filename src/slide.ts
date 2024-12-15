@@ -1,6 +1,5 @@
 import {getNested} from './util'
 import {Shape} from './shape'
-import {Pjs} from './power'
 
 export class Slide  {
     // slide sizes are in DXA

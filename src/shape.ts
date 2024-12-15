@@ -1,12 +1,22 @@
 
-import {ShapeProp} from './interface'
+import {PreSetGeom, ShapeProp} from './interface'
+import { Fill, Stroke } from './style';
 import {getNested} from './util'
 
 export class Shape{
     // slide sizes are in DXA
     // - 914400 EMUs is 1 inch
     _shapes:any={};
-    _props: ShapeProp = {id:'0', name:'0',pos: {x:0, y:0, h:0, w:0},prstGeom:''};
+    props: ShapeProp = {id:'', name:'',pos: {x:0, y:0, h:0, w:0},prstGeom:'rect'};
+    fill:Fill = new Fill()
+    stroke:Stroke = new Stroke()
+    x=0
+    y=0
+    h=0
+    w=0
+    prstGeom:PreSetGeom='rect'
+
+    
     
 
     constructor(){
@@ -16,14 +26,14 @@ export class Shape{
    
 
     getShapeProps():ShapeProp{
-        this._props.id=this._shapes['p:nvSpPr']['p:cNvPr']['@_id']
-        this._props.name=this._shapes['p:nvSpPr']['p:cNvPr']['@_name']
-        this._props.pos ={}
-        this._props.pos.x=getNested(this._shapes,'p:spPr','a:xfrm','a:off','@_x')
-        this._props.pos.y=getNested(this._shapes,'p:spPr','a:xfrm','a:off','@_y')
-        this._props.pos.h=getNested(this._shapes,'p:spPr','a:xfrm','a:ext','@_cx')
-        this._props.pos.w=getNested(this._shapes,'p:spPr','a:xfrm','a:ext','@_cy')
-        this._props.prstGeom = getNested(this._shapes,'p:spPr','a:prstGeom','@_prst')
+        this.props.id=this._shapes['p:nvSpPr']['p:cNvPr']['@_id']
+        this.props.name=this._shapes['p:nvSpPr']['p:cNvPr']['@_name']
+        this.props.pos ={}
+        this.props.pos.x=getNested(this._shapes,'p:spPr','a:xfrm','a:off','@_x')
+        this.props.pos.y=getNested(this._shapes,'p:spPr','a:xfrm','a:off','@_y')
+        this.props.pos.h=getNested(this._shapes,'p:spPr','a:xfrm','a:ext','@_cx')
+        this.props.pos.w=getNested(this._shapes,'p:spPr','a:xfrm','a:ext','@_cy')
+        this.props.prstGeom = getNested(this._shapes,'p:spPr','a:prstGeom','@_prst')
         // this._props.ln_prstDash = this.getNested(this._shapes,'p:spPr','a:ln','a:prstDash','@_val')
         // this._props.solidFill = this.getNested(this._shapes,'p:spPr','a:solidFill','a:srgbClr','@_val')
 
@@ -59,7 +69,7 @@ export class Shape{
         //     this.props.style.fontRef_schemeClr_shade = this.getNested(this.shapes,'p:style','a:fontRef','a:schemeClr','a:shade', '@_val')
         // }
         
-        return this._props
+        return this.props
         
     }
 

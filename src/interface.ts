@@ -13,6 +13,8 @@ export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
 export type BGtype = 'noFill'| 'solidFill'|'gradientFill'|'patternFill'|'imageFill'
 
+export type PreSetGeom = 'rect' | 'circle'
+
 
 // background
 export interface BGProps{

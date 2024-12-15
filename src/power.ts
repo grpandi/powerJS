@@ -4,8 +4,10 @@
 
 import jszip from 'jszip'
 import {Slide, Slides} from './slide'
+import { Shape } from './shape'
 import {XMLParser, XMLBuilder, XMLValidator} from 'fast-xml-parser'
-import {getNested, Bg, Color} from './util'
+import {getNested} from './util'
+import { Bg } from './style'
 import { BGProps } from './interface'
 import { Canvas } from './canvas'
 
@@ -168,6 +170,14 @@ export class Pjs{
 
     return {type: bgVal.type, val:bgVal.val}   
 }
+
+  drawSlide(n:number){
+
+  }
+
+  drawShape(shape:Shape){
+
+  }
 
 }
 
