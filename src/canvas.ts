@@ -21,27 +21,28 @@ export class Canvas{
 
     fill(x:number,y:number,w:number,h:number){
         if(this.ctx!=null){
-            if(this.shape.fill.type="noFill"){
+            if(this.shape.fill.getType()=="noFill"){
                 this.ctx.globalAlpha = 0
                 this.ctx.fill()
             } 
-            if(this.shape.fill.type="solidFill"){
-                this.ctx.fillStyle=this.shape.fill.val
+            if(this.shape.fill.getType()=="solidFill"){
+                this.ctx.fillStyle=this.shape.fill.getVal()
                 this.ctx.globalAlpha = this.shape.fill.alpha;
                 this.ctx.fill()
             }
-            if(this.shape.fill.type="gradientFill"){
-                let angle = this.shape.fill.val.linang * Math.PI / 180
+            if(this.shape.fill.getType()=="gradientFill"){
+                let val:any = this.shape.fill.getVal()
+                let angle = val.linang * Math.PI / 180
                 let x2 = w*Math.cos(angle)
                 let y2 = h*Math.sin(angle)
                 const lineargradient = this.ctx.createLinearGradient(x, y, x2, y2);
-                if(this.shape.fill.val.gradient){
-                    for( let grad of this.shape.fill.val.gradient){
+                if(val.gradient){
+                    for( let grad of val.gradient){
                         lineargradient.addColorStop(grad.pos/100,grad.clr)
                     }
                 }
                 this.ctx.fillStyle=lineargradient
-                this.ctx.globalAlpha=this.shape.fill.val
+                this.ctx.globalAlpha=this.shape.fill.alpha
                 this.ctx.fill()
             }     
         }
@@ -49,27 +50,28 @@ export class Canvas{
     }
     stroke(x:number,y:number,w:number,h:number){
         if(this.ctx!=null){
-            if(this.shape.stroke.fill.type="noFill"){
+            if(this.shape.stroke.fill.getType()=="noFill"){
                 this.ctx.globalAlpha = 0
                 this.ctx.stroke()
             } 
-            if(this.shape.stroke.fill.type="solidFill"){
-                this.ctx.strokeStyle=this.shape.stroke.fill.val
+            if(this.shape.stroke.fill.getType()=="solidFill"){
+                this.ctx.strokeStyle=this.shape.stroke.fill.getVal()
                 this.ctx.globalAlpha = this.shape.fill.alpha;
                 this.ctx.stroke()
             }
-            if(this.shape.stroke.fill.type="gradientFill"){
-                let angle = this.shape.stroke.fill.val.linang * Math.PI / 180
+            if(this.shape.stroke.fill.getType()=="gradientFill"){
+                let val = this.shape.stroke.fill.getVal()
+                let angle = val.linang * Math.PI / 180
                 let x2 = w*Math.cos(angle)
                 let y2 = h*Math.sin(angle)
                 const lineargradient = this.ctx.createLinearGradient(x, y, x2, y2);
-                if(this.shape.stroke.fill.val.gradient){
-                    for( let grad of this.shape.stroke.fill.val.gradient){
+                if(val.gradient){
+                    for( let grad of val.gradient){
                         lineargradient.addColorStop(grad.pos/100,grad.clr)
                     }
                 }
                 this.ctx.strokeStyle=lineargradient
-                this.ctx.globalAlpha=this.shape.fill.val
+                this.ctx.globalAlpha=this.shape.stroke.fill.alpha
                 this.ctx.stroke()
             }     
         }
@@ -83,8 +85,8 @@ export class Canvas{
     rect(){
         let startX = (this.shape.x*this.widthRatio)+this.widthOffset
         let startY = (this.shape.y*this.heightRatio)+this.heightOffset
-        let endX = (this.shape.w*this.widthRatio)+this.widthOffset
-        let endY = (this.shape.h*this.heightRatio)+this.heightOffset
+        let endX = (this.shape.w*this.widthRatio)-this.widthOffset
+        let endY = (this.shape.h*this.heightRatio)-this.heightOffset
         this.ctx?.beginPath()
         this.ctx?.moveTo(startX,startY)
         this.ctx?.lineTo(endX, startY)

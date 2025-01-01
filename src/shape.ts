@@ -1,7 +1,8 @@
 
 import {PreSetGeom, ShapeProp} from './interface'
-import { Fill, Stroke } from './style';
+import {Fill, Stroke} from './style'
 import {getNested} from './util'
+
 
 export class Shape{
     // slide sizes are in DXA
@@ -14,16 +15,10 @@ export class Shape{
     y=0
     h=0
     w=0
-    prstGeom:PreSetGeom='rect'
-
-    
-    
-
-    constructor(){
-        this._shapes={}
+    prstGeom:PreSetGeom='rect'   
+    constructor(x:number=0,y:number=0,w:number=0,h:number=0){
+        this.x=x;this.y=y;this.h=h;this.w=w
     }
-
-   
 
     getShapeProps():ShapeProp{
         this.props.id=this._shapes['p:nvSpPr']['p:cNvPr']['@_id']

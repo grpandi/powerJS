@@ -4,7 +4,6 @@
   "main": "./dist/index.js",
   "module": "./dist/index-mjs",
   "types": "./dist/index.d.ts",
-  
   "scripts": {
     "build": "tsup"
   },
@@ -18,9 +17,14 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
-    "fast-xml-parser": "^4.5.0",
     "@types/node": "^22.7.6",
+    "buffer": "^6.0.3",
+    "fast-xml-parser": "^4.5.0",
     "fs": "^0.0.1-security",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "sax": "^1.4.1",
+    "stream": "^0.0.3",
+    "stream-browserify": "^3.0.0",
+    "xml-js": "^1.6.11"
   }
 }

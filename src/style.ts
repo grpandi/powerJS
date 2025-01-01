@@ -1,267 +1,277 @@
 import {BGtype} from './interface';
-import {getNested} from './util'
+import {getbyPath} from './util'
 
-export class Bg {
-    type = ''
-    val:any
 
-    constructor(bgobj?:any, clrMap?:any, theme?:any){
-        if(typeof(bgobj)=='object'){
-            if('p:bgPr'in bgobj){               
-                let fill = new Fill(bgobj['p:bgPr'], clrMap, theme)
-                this.type = fill.type
-                this.val = fill.val
-            }
-            if('p:bgRef'in bgobj){
-                let color = new Color(bgobj['p:bgRef'], clrMap, theme)
-                this.type = color.clr.type
-                this.val = color.getColor()
-            }
+
+export class Fill{
+    private type:BGtype='solidFill'
+    private fillObj:any
+    private clrMap:any
+    private theme:any
+    private val:any="#FFFFFF"
+    alpha=1
+    constructor(obj?:any, clrMap?:any, theme?:any){
+        if(obj!=undefined){
+            this.fillObj = obj
         }
-    }
-}
-
-export class Fill {
-    type:BGtype='noFill'
-    val:any;
-    alpha=0;
-    constructor(fillObj?:any, clrMap?:any, theme?:any){
-        this.type ='noFill'
-        this.val ="#FFFFFF"
-        this.alpha=0
-        if (typeof(fillObj)=='object'){
-
-            // solidFill
-            if('a:solidFill' in fillObj){ 
-                this.type='solidFill'       
-                let color = new Color(fillObj['a:solidFill'], clrMap, theme)
-                this.val = color.getColor()
-            }
-
-            // gradFill
-
-            if('a:gradFill' in fillObj){
-                this.type = "gradientFill"
-                this.val = {gradient:[], linang:''}
-                let gradStopObj = getNested(fillObj, 'a:gradFill','a:gsLst','a:gs')
-                for(let gs in gradStopObj){
-                    let clrClass = new Color(gradStopObj[gs], clrMap, theme)
-                    let clr = clrClass.getColor()
-                    let gsPos = parseInt(gradStopObj[gs]['@_pos'])/1000
-                    this.val.gradient.push({pos:gsPos,clr})
-                }
-                if(getNested(fillObj, 'a:gradFill','a:lin','@_ang') !='undefined'){
-                    // convert arc length to degrees (arc length / 60)
-                    this.val.linang = parseInt(getNested(fillObj, 'a:gradFill','a:lin','@_ang'))/60000 
-                }                     
-            }
-
-            // patternFill (TBD)
-
-
-
-            // ImageFill 
-            if('a:blipFill' in fillObj){
-                this.type = 'imageFill'
-                this.val = {imgPath:'', stretch:'', tile:''}
-                if(getNested(fillObj, 'a:blipFill','a:blip','r:embed') !='undefined'){
-                    this.val.imgPath = getNested(fillObj, 'a:blipFill','a:blip','r:embed') 
-                }
-                if(getNested(fillObj, 'a:blipFill','a:blip','r:link') !='undefined'){
-                    this.val.imgPath = getNested(fillObj, 'a:blipFill','a:blip','r:link') 
-                }
-
-            }
-
-
-
-
+        if(clrMap!=undefined){
+            this.clrMap = clrMap
         }
-        if(typeof(fillObj)=='string'){
-            if(fillObj=='noFill'){this.type= fillObj}
-            if(fillObj=='solidFill'){this.type=fillObj}
-            if(fillObj=='gradientFill'){this.type=fillObj}
-            if(fillObj=='patternFill'){this.type=fillObj}
-            if(fillObj=='imageFill'){this.type=fillObj}            
-        }
+        if(theme!=undefined){
+            this.theme = theme
+          }
+          
+          this.evalFill()
     }
 
-
+    private evalFill(){
+      if(this.fillObj==undefined){return}
+      if(this.fillObj['name']=='a:solidFill'){ 
+        this.type='solidFill'       
+        let clrObj:any = getbyPath(this.fillObj,'a:solidFill')
+        if(clrObj!=null){
+          let clr = new Color(clrObj['elements'][0], this.clrMap, this.theme)
+          this.val = clr.getColor()
+        }
+      }
+      if(this.fillObj['name']=='a:gradFill'){
+        this.type = "gradientFill"                                 
+        let gradStopObj:any = getbyPath(this.fillObj, 'a:gradFill/a:gsLst')
+        let val: { gradient: { pos: number; clr: string }[]; linang: number } = { gradient: [], linang: 0 }
+        for (let gs of gradStopObj['elements']){
+          let clrClass = new Color(gs['elements'][0], this.clrMap, this.theme)
+          let clr:any = clrClass.getColor()
+          let gsPos:any = parseInt(gs['attributes']['pos'])/1000
+          val.gradient.push({pos:gsPos,clr})
+        }
+        let linangObj:any = getbyPath(this.fillObj, 'a:gradFill/a:lin')
+        if(linangObj!=null){
+          val.linang = parseInt(linangObj['attributes']['ang'])/60000
+        }
+        this.val = val
+      }
+    }
+    set fillType(t:BGtype){this.type = t}
+    set fillVal(v:any){this.val = v}
+    
+    getType():string{
+      return this.type
+    }
+    getVal():any{
+      return this.val
+    }
+    
 }
 
 export class Color{
-	a_hslClr?:any
-	p_prstClr?:any
-	p_schemeClr?:any
-	p_scrgbClr?:any
-	p_srgbClr?:any
-	p_sysClr?:any
-	type:string =''
-    clrMap:any
-    theme:any
-	clr:any={type:'', val:''}
-    
-    lumOff:number = 0
-    presetColors:any={'indianred':'#CD5C5C','lightcoral':'#F08080','salmon':'#FA8072','darksalmon':'#E9967A','lightsalmon':'#FFA07A',
-        'crimson':'#DC143C','red':'#FF0000','firebrick':'#B22222','darkred':'#8B0000','pink':'#FFC0CB','lightpink':'#FFB6C1',
-        'hotpink':'#FF69B4','deeppink':'#FF1493','mediumvioletred':'#C71585','palevioletred':'#DB7093',
-        'coral':'#FF7F50','tomato':'#FF6347','orangered':'#FF4500','darkorange':'#FF8C00','orange':'#FFA500','gold':'#FFD700',
-        'yellow':'#FFFF00','lightyellow':'#FFFFE0','lemonchiffon':'#FFFACD','lightgoldenrodyellow':'#FAFAD2','papayawhip':'#FFEFD5',
-        'moccasin':'#FFE4B5','peachpuff':'#FFDAB9','palegoldenrod':'#EEE8AA','khaki':'#F0E68C','darkkhaki':'#BDB76B',
-        'lavender':'#E6E6FA','thistle':'#D8BFD8','plum':'#DDA0DD','violet':'#EE82EE','orchid':'#DA70D6','fuchsia':'#FF00FF',
-        'magenta':'#FF00FF','mediumorchid':'#BA55D3','mediumpurple':'#9370DB','rebeccapurple':'#663399','blueviolet':'#8A2BE2',
-        'darkviolet':'#9400D3','darkorchid':'#9932CC','darkmagenta':'#8B008B','purple':'#800080','indigo':'#4B0082',
-        'slateblue':'#6A5ACD','darkslateblue':'#483D8B','mediumslateblue':'#7B68EE','greenyellow':'#ADFF2F','chartreuse':'#7FFF00',
-        'lawngreen':'#7CFC00','lime':'#00FF00','limegreen':'#32CD32','palegreen':'#98FB98','lightgreen':'#90EE90',
-        'mediumspringgreen':'#00FA9A','springgreen':'#00FF7F','mediumseagreen':'#3CB371','seagreen':'#2E8B57','forestgreen':'#228B22',
-        'green':'#008000','darkgreen':'#006400','yellowgreen':'#9ACD32','olivedrab':'#6B8E23','olive':'#808000',
-        'darkolivegreen':'#556B2F','mediumaquamarine':'#66CDAA','darkseagreen':'#8FBC8B','lightseagreen':'#20B2AA','darkcyan':'#008B8B',
-        'teal':'#008080','aqua':'#00FFFF','cyan':'#00FFFF','lightcyan':'#E0FFFF','paleturquoise':'#AFEEEE','aquamarine':'#7FFFD4',
-        'turquoise':'#40E0D0','mediumturquoise':'#48D1CC','darkturquoise':'#00CED1','cadetblue':'#5F9EA0','steelblue':'#4682B4',
-        'lightsteelblue':'#B0C4DE','powderblue':'#B0E0E6','lightblue':'#ADD8E6','skyblue':'#87CEEB','lightskyblue':'#87CEFA',
-        'deepskyblue':'#00BFFF','dodgerblue':'#1E90FF','cornflowerblue':'#6495ED','royalblue':'#4169E1','blue':'#0000FF',
-        'mediumblue':'#0000CD','darkblue':'#00008B','navy':'#000080','midnightblue':'#191970','cornsilk':'#FFF8DC',
-        'blanchedalmond':'#FFEBCD','bisque':'#FFE4C4','navajowhite':'#FFDEAD','wheat':'#F5DEB3','burlywood':'#DEB887',
-        'tan':'#D2B48C','rosybrown':'#BC8F8F','sandybrown':'#F4A460','goldenrod':'#DAA520','darkgoldenrod':'#B8860B',
-        'peru':'#CD853F','chocolate':'#D2691E','saddlebrown':'#8B4513','sienna':'#A0522D','brown':'#A52A2A','maroon':'#800000',
-        'white':'#FFFFFF','snow':'#FFFAFA','honeydew':'#F0FFF0','mintcream':'#F5FFFA','azure':'#F0FFFF','aliceblue':'#F0F8FF',
-        'ghostwhite':'#F8F8FF','whitesmoke':'#F5F5F5','seashell':'#FFF5EE','beige':'#F5F5DC','oldlace':'#FDF5E6','floralwhite':'#FFFAF0',
-        'ivory':'#FFFFF0','antiquewhite':'#FAEBD7','linen':'#FAF0E6','lavenderblush':'#FFF0F5','mistyrose':'#FFE4E1','gainsboro':'#DCDCDC',
-        'lightgray':'#D3D3D3','silver':'#C0C0C0','darkgray':'#A9A9A9','gray':'#808080','dimgray':'#696969','lightslategray':'#778899',
-        'slategray':'#708090','darkslategray':'#2F4F4F','black':'#000000'}
+	private clrObject:any;
+  clrMap:any;
+  theme:any;
+  alpha=1;
+  lumOff:number = 0
+  private val = "#FFFFFF"
+  constructor(clrObj?:any, clrMp?:any, thm?:any){
+    if(clrObj!=undefined){
+      this.clrObject = clrObj
+    }
+    if(clrMp!=undefined){
+      this.clrMap = clrMp
+    }
+    if(thm!=undefined){
+      this.theme = thm
+    }
+  }
+  set clrObj(clrObj:any){this.clrObject = clrObj}
+  set clrMp(clrMp:any){this.clrMap = clrMp}
+  set thm(thm:any){this.theme = thm}
+  
+  private presetColors:any={'indianred':'#CD5C5C','lightcoral':'#F08080','salmon':'#FA8072','darksalmon':'#E9967A','lightsalmon':'#FFA07A',
+    'crimson':'#DC143C','red':'#FF0000','firebrick':'#B22222','darkred':'#8B0000','pink':'#FFC0CB','lightpink':'#FFB6C1',
+    'hotpink':'#FF69B4','deeppink':'#FF1493','mediumvioletred':'#C71585','palevioletred':'#DB7093',
+    'coral':'#FF7F50','tomato':'#FF6347','orangered':'#FF4500','darkorange':'#FF8C00','orange':'#FFA500','gold':'#FFD700',
+    'yellow':'#FFFF00','lightyellow':'#FFFFE0','lemonchiffon':'#FFFACD','lightgoldenrodyellow':'#FAFAD2','papayawhip':'#FFEFD5',
+    'moccasin':'#FFE4B5','peachpuff':'#FFDAB9','palegoldenrod':'#EEE8AA','khaki':'#F0E68C','darkkhaki':'#BDB76B',
+    'lavender':'#E6E6FA','thistle':'#D8BFD8','plum':'#DDA0DD','violet':'#EE82EE','orchid':'#DA70D6','fuchsia':'#FF00FF',
+    'magenta':'#FF00FF','mediumorchid':'#BA55D3','mediumpurple':'#9370DB','rebeccapurple':'#663399','blueviolet':'#8A2BE2',
+    'darkviolet':'#9400D3','darkorchid':'#9932CC','darkmagenta':'#8B008B','purple':'#800080','indigo':'#4B0082',
+    'slateblue':'#6A5ACD','darkslateblue':'#483D8B','mediumslateblue':'#7B68EE','greenyellow':'#ADFF2F','chartreuse':'#7FFF00',
+    'lawngreen':'#7CFC00','lime':'#00FF00','limegreen':'#32CD32','palegreen':'#98FB98','lightgreen':'#90EE90',
+    'mediumspringgreen':'#00FA9A','springgreen':'#00FF7F','mediumseagreen':'#3CB371','seagreen':'#2E8B57','forestgreen':'#228B22',
+    'green':'#008000','darkgreen':'#006400','yellowgreen':'#9ACD32','olivedrab':'#6B8E23','olive':'#808000',
+    'darkolivegreen':'#556B2F','mediumaquamarine':'#66CDAA','darkseagreen':'#8FBC8B','lightseagreen':'#20B2AA','darkcyan':'#008B8B',
+    'teal':'#008080','aqua':'#00FFFF','cyan':'#00FFFF','lightcyan':'#E0FFFF','paleturquoise':'#AFEEEE','aquamarine':'#7FFFD4',
+    'turquoise':'#40E0D0','mediumturquoise':'#48D1CC','darkturquoise':'#00CED1','cadetblue':'#5F9EA0','steelblue':'#4682B4',
+    'lightsteelblue':'#B0C4DE','powderblue':'#B0E0E6','lightblue':'#ADD8E6','skyblue':'#87CEEB','lightskyblue':'#87CEFA',
+    'deepskyblue':'#00BFFF','dodgerblue':'#1E90FF','cornflowerblue':'#6495ED','royalblue':'#4169E1','blue':'#0000FF',
+    'mediumblue':'#0000CD','darkblue':'#00008B','navy':'#000080','midnightblue':'#191970','cornsilk':'#FFF8DC',
+    'blanchedalmond':'#FFEBCD','bisque':'#FFE4C4','navajowhite':'#FFDEAD','wheat':'#F5DEB3','burlywood':'#DEB887',
+    'tan':'#D2B48C','rosybrown':'#BC8F8F','sandybrown':'#F4A460','goldenrod':'#DAA520','darkgoldenrod':'#B8860B',
+    'peru':'#CD853F','chocolate':'#D2691E','saddlebrown':'#8B4513','sienna':'#A0522D','brown':'#A52A2A','maroon':'#800000',
+    'white':'#FFFFFF','snow':'#FFFAFA','honeydew':'#F0FFF0','mintcream':'#F5FFFA','azure':'#F0FFFF','aliceblue':'#F0F8FF',
+    'ghostwhite':'#F8F8FF','whitesmoke':'#F5F5F5','seashell':'#FFF5EE','beige':'#F5F5DC','oldlace':'#FDF5E6','floralwhite':'#FFFAF0',
+    'ivory':'#FFFFF0','antiquewhite':'#FAEBD7','linen':'#FAF0E6','lavenderblush':'#FFF0F5','mistyrose':'#FFE4E1','gainsboro':'#DCDCDC',
+    'lightgray':'#D3D3D3','silver':'#C0C0C0','darkgray':'#A9A9A9','gray':'#808080','dimgray':'#696969','lightslategray':'#778899',
+    'slategray':'#708090','darkslategray':'#2F4F4F','black':'#000000'}
 
-    systemColors:any ={'activeborder':'#C0C0C0','activecaption':'#000080','appworkspace':'#808080','background':'#3A6EA5',
-        'buttonface':'#C0C0C0','buttonhighlight':'#FFFFFF','buttonshadow':'#808080','buttontext':'#000000','captiontext':'#FFFFFF',
-        'graytext':'#808080','highlight':'#000080','highlighttext':'#FFFFFF','inactiveborder':'#C0C0C0','inactivecaption':'#808080',
-        'inactivecaptiontext':'#C0C0C0','infobackground':'#FFFFFF','infotext':'#000000','menu':'#C0C0C0','menutext':'#000000',
-        'scrollbar':'#C0C0C0','threeddarkshadow':'#000000','threedface':'#C0C0C0','threedhighlight':'#FFFFFF',
-        'threedlightshadow':'#C0C0C0','threedshadow':'#808080','window':'#ffffff','windowframe':'#000000','windowtext':'#000000'}
+  private systemColors:any ={'activeborder':'#C0C0C0','activecaption':'#000080','appworkspace':'#808080','background':'#3A6EA5',
+    'buttonface':'#C0C0C0','buttonhighlight':'#FFFFFF','buttonshadow':'#808080','buttontext':'#000000','captiontext':'#FFFFFF',
+    'graytext':'#808080','highlight':'#000080','highlighttext':'#FFFFFF','inactiveborder':'#C0C0C0','inactivecaption':'#808080',
+    'inactivecaptiontext':'#C0C0C0','infobackground':'#FFFFFF','infotext':'#000000','menu':'#C0C0C0','menutext':'#000000',
+    'scrollbar':'#C0C0C0','threeddarkshadow':'#000000','threedface':'#C0C0C0','threedhighlight':'#FFFFFF',
+    'threedlightshadow':'#C0C0C0','threedshadow':'#808080','window':'#ffffff','windowframe':'#000000','windowtext':'#000000'}
 
-	constructor(clrObj?:any,clrMap?:any, theme?:any){
-		if(typeof(clrMap) !='undefined'){this.clrMap = clrMap}
-        if(typeof(theme) !='undefined'){this.theme = theme}
-        if(typeof(clrObj) !='undefined'){
-			if('a:hslClr' in clrObj){
-				this.a_hslClr = clrObj['a:hslClr'];
-				let hsl={hue:0, saturation:0, lightness:0}
-				if('@_hue'in this.a_hslClr){hsl.hue = parseInt(this.a_hslClr['@_hue'])/10000}
-				if('@_sat'in this.a_hslClr){hsl.saturation = parseInt(this.a_hslClr['@_sat'])}
-				if('@_lum'in this.a_hslClr){hsl.lightness =parseInt(this.a_hslClr['@_lum'])}
-				if('a:hue'in this.a_hslClr){hsl.hue = this.a_hslClr['a:hue']['@_val']}
-                if('a:lumOff'in this.a_hslClr){this.lumOff = parseInt(this.a_hslClr['a:lumOff'])/1000}
-				this.clr.type='hsl'
-				this.clr.val = hsl
-			}
-			if('a:prstClr' in clrObj){
-                this.p_prstClr= clrObj['a:prstClr'];
-                this.clr.type='preset'
-                this.clr.val=this.p_prstClr['@_val']
-                if('a:lumOff'in this.p_prstClr){this.lumOff = parseInt(this.p_prstClr['a:lumOff']['@_val'])/1000}
-            }
-            if('a:sysClr' in clrObj){
-                this.p_sysClr= clrObj['a:sysClr'];
-                this.clr.type='sysclr'
-                this.clr.val=this.p_sysClr['@_val']
-                if('a:lumOff'in this.p_sysClr){this.lumOff = parseInt(this.p_sysClr['a:lumOff']['@_val'])/1000}
-            }
+  getColor():String{
+      if(typeof (this.clrObject) === 'undefined'){
+          return this.val;
+      }
 
-			if('a:schemeClr' in clrObj){
-                this.p_schemeClr= clrObj['a:schemeClr'];
-                this.clr.type= 'theme'
-                this.clr.val = this.p_schemeClr['@_val'];
-                console.log(this.p_schemeClr['a:lumOff'])
-                if('a:lumOff'in this.p_schemeClr){this.lumOff = parseInt(this.p_schemeClr['a:lumOff']['@_val'])/1000}
-            }
-            if('a:srgbClr' in clrObj){
-                this.p_srgbClr= clrObj['a:srgbClr']
-                this.clr.type= 'hex'
-                this.clr.val = this.p_srgbClr['@_val']
-                if('a:lumOff'in this.p_srgbClr){this.lumOff = parseInt(this.p_srgbClr['a:lumOff']['@_val'])/1000}
-            }
-			if('a:scrgbClr' in clrObj){
-                this.p_scrgbClr= clrObj['a:scrgbClr']
-                this.clr.type ='rgb'
-                let r = parseInt(this.p_scrgbClr['p:rgb']['@_r'])
-                let g =  parseInt(this.p_scrgbClr['p:rgb']['@_g'])
-                let b =  parseInt(this.p_scrgbClr['p:rgb']['@_b'])
-                this.clr.val = [r,g,b]
-                if('a:lumOff'in this.p_scrgbClr){this.lumOff = parseInt(this.p_scrgbClr['a:lumOff']['@_val'])/1000}
-            }
-			
-			
-		}	
-	}
+      // hslClr
+      if(this.clrObject['name']=='a:hslClr'){
+        let clr = this.readHSL()
+        return clr
+      }
+      // presetClr
+      if(this.clrObject['name']=='a:prstClr'){
+        let clr = this.readPreset()
+        return clr
+      }
+      // scrgbClr
+      if(this.clrObject['name']=='a:scrgbClr'){
+        let clr = this.readScRGB()
+        return clr
+      }
+      // sysClr
+      if(this.clrObject['name']=='a:sysClr'){
+        let clr = this.readSysClr()
+        return clr
+      }
+      // schemeClr
+      if(this.clrObject['name']=='a:schemeClr'){
+        let clr = this.readSchemeClr()
+        return clr
+      }
+      // srgbClr
+      if(this.clrObject['name']=='a:srgbClr'){
+        let clr = this.readsrgbClr()
+        return clr
+      }
 
-    getColor():any{
-        if(this.clr.type=='hsl'){
-            return this.HSLToHex(this.clr.val.h, this.clr.val.s, this.clr.val.l + this.lumOff)
-        }
-        if(this.clr.type=='preset'){
-            let clrVal:any = this.presetColors[this.clr.val.toLowerCase()]
-            if(this.lumOff>0){                
-                // convert to hex to rgb
-                clrVal = this.hexToRGB(clrVal)
-                // convert rgb to hsl
-                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
-                // convert to Hex by replacing lumOff
-                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
-            }
-            return clrVal
-        }
-        if(this.clr.type=='sysclr'){
-            let clrVal:any = this.systemColors[this.clr.val.toLowerCase()]
-            if(this.lumOff>0){                
-                // convert to hex to rgb
-                clrVal = this.hexToRGB(clrVal)
-                // convert rgb to hsl
-                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
-                // convert to Hex by replacing lumOff
-                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
-            }
-            return clrVal
-        }
-        if(this.clr.type=='hex'){
-            let clrVal:any = this.clr.val
-            if(this.lumOff>0){                
-                // convert to hex to rgb
-                clrVal = this.hexToRGB(clrVal)
-                // convert rgb to hsl
-                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
-                // convert to Hex by replacing lumOff
-                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
-            }
-            return clrVal
-        }
-        if(this.clr.type=='theme'){
-            let themeClrName = getNested(this.theme,'a:'+this.clrMap['@_'+this.clr.val])
-            let thmclr = new Color(themeClrName)
-            let clrVal:any = thmclr.getColor()
-            if(clrVal.length==6){
-                clrVal = "#"+ clrVal
-            }
-            if(this.lumOff>0){                
-                // convert to hex to rgb
-                clrVal = this.hexToRGB(clrVal)
-                // convert rgb to hsl
-                clrVal = this.rgbToHSL(clrVal.r, clrVal.g, clrVal.b)
-                // convert to Hex by replacing lumOff
-                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
-            }
-            return clrVal
-        }
-        if(this.clr.type=='rgb'){
-            let clrVal:any = "";
-            if(this.lumOff>0){                
-                // convert rgb to hsl
-                clrVal = this.rgbToHSL(this.clr.type.r, this.clr.type.g, this.clr.type.b)
-                // convert to Hex by replacing lumOff
-                clrVal = this.HSLToHex(clrVal.h,clrVal.s, this.lumOff)
-            }
-            return clrVal
-        }
+      return this.val;
+  }
+
+// functions to resolve types of color objects
+    // to test
+    private readHSL(){
+      let hsl={hue:0, saturation:0, lightness:0}
+      if('hue' in this.clrObject['attributes']){
+        hsl.hue = parseInt(this.clrObject['attributes']['hue'])/10000
+      }
+      if('sat' in this.clrObject['attributes']){
+        hsl.saturation = parseInt(this.clrObject['attributes']['sat'])
+      }
+      if('lum' in this.clrObject['attributes']){
+        hsl.lightness = parseInt(this.clrObject['attributes']['lum'])
+      }
+      let hueElemVal:any = getbyPath(this.clrObject, 'a:hslClr/a:hue')
+      if(hueElemVal != null){
+        hsl.hue = parseInt(hueElemVal['attributes']['val'])/10000
+      }
+      this.setLumOff('a:hslClr')
+      let clr = this.HSLToHex(hsl.hue, hsl.saturation, hsl.lightness + this.lumOff)
+      return clr
+    }
+    // to test
+    private readPreset(){
+      let preSetval = this.clrMap[this.clrObject['attributes']['val']]
+      this.setLumOff('a:prstClr')
+      let clr = this.presetColors[preSetval.toLowerCase()]
+      if(this.lumOff>0){                
+        // convert to hex to rgb
+        clr = this.hexToRGB(clr)
+        // convert rgb to hsl
+        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
+        // convert to Hex by replacing lumOff
+        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
+    }
+      return clr
+    }
+    // to test
+    private readScRGB(){
+      let rgbObj:any = getbyPath(this.clrObject, 'a:scrgbClr/p:rgb')
+      let r = parseInt(rgbObj['attributes']['r'])
+      let g = parseInt(rgbObj['attributes']['g'])
+      let b = parseInt(rgbObj['attributes']['b'])
+      this.setLumOff('a:scrgbClr')
+      let clr:any = this.rgbtoHex(r,g,b)
+      if(this.lumOff>0){                
+        // convert rgb to hsl
+        clr = this.rgbToHSL(r, g, b)
+        // convert to Hex by replacing lumOff
+        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
+      }
+      return clr
+    }
+  
+    private readSysClr(){
+      let clrVal = this.clrObject['attributes']['val']
+      this.setLumOff('a:sysClr')
+      let clr = this.systemColors[clrVal.toLowerCase()]
+      if(this.lumOff>0){                
+        // convert to hex to rgb
+        clr = this.hexToRGB(clr)
+        // convert rgb to hsl
+        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
+        // convert to Hex by replacing lumOff
+        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
+      }
+      return clr
     }
 
-	private hsl_rgb(h:any, s:any, l:any) {
+    private readSchemeClr(){
+      // let schemeClrObj:any = getbyPath(this.clrObject, 'a:schemeClr')
+      let clrVal = this.clrObject['attributes']['val']
+      this.setLumOff('a:schemeClr')
+      let themeClrObj:any = getbyPath(this.theme,'a:themeElements/a:clrScheme/a:'+this.clrMap[clrVal])
+      let nclr = new Color()
+      nclr.clrObj = themeClrObj['elements'][0]
+      let clr:any = nclr.getColor()
+      if(this.lumOff>0){                
+        // convert to hex to rgb
+        clr = this.hexToRGB(clr)
+        // convert rgb to hsl
+        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
+        // convert to Hex by replacing lumOff
+        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
+      }
+      return clr
+    }
+    
+    private readsrgbClr(){
+      let clr = this.clrObject['attributes']['val']
+      this.setLumOff('a:srgbClr')
+      if(this.lumOff>0){                
+        // convert to hex to rgb
+        clr = this.hexToRGB(clr)
+        // convert rgb to hsl
+        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
+        // convert to Hex by replacing lumOff
+        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
+      }
+      return clr
+    }
+    
+    private setLumOff(path:string){
+      let lumOffset:any = getbyPath(this.clrObject, path+'/a:lumOff')
+      if(lumOffset != null){
+        this.lumOff = parseInt(lumOffset['attributes']['val'])/1000
+      }
+      
+    }
+
+
+
+// color conversion functions
+	  private hsl_rgb(h:any, s:any, l:any) {
             // Scale h to 0..1 with modulo for negative values too
             h = (((h / 360) % 1) + 1) % 1;
             if (s === 0)
@@ -301,7 +311,7 @@ export class Color{
           b = "0x" + h[5] + h[6];
         }
         return {'r':+r, 'g': +g,'b': +b}
-      }
+    }
 
     private HSLToHex(h:any,s:any,l:any):String {
         s /= 100;
@@ -345,10 +355,7 @@ export class Color{
     private rgbtoHex(r:number,g:number,b:number):String{
         return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     }
-    private presetToHex(){
-
-    }
-
+    
     private rgbToHSL(r:any,g:any,b:any) {
         // Make r, g, and b fractions of 1
         r /= 255;
@@ -406,7 +413,9 @@ export class Stroke{
         this.cmpd = "sng" //single(sng), Double(dbl), ThickThin(thickThin), ThinThick(thinThick), Triple(tri)
         this.algn ="ctr"
         this.fill =new Fill()
-        this.fill.type ="solidFill"
-        this.fill.val = "#000000" 
+        this.fill.fillType ="solidFill"
+        this.fill.fillVal = "#000000" 
     }
 }
+
+

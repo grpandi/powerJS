@@ -3,13 +3,15 @@
 // var slide = require('./slide')
 
 import jszip from 'jszip'
-import {Slide, Slides} from './slide'
+// import {Slide, SlideOld, Rel} from './slide'
+import { Slide, Rel } from './slide'
+// import {xmlSrc, Rel} from './core'
 import { Shape } from './shape'
+import { Fill, Color } from './style'
 import {XMLParser, XMLBuilder, XMLValidator} from 'fast-xml-parser'
-import {getNested} from './util'
-import { Bg } from './style'
-import { BGProps } from './interface'
+import {getbyPath, getNested} from './util'
 import { Canvas } from './canvas'
+import {xml2js, js2xml} from 'xml-js'
 
 
 export const myPromise = new Promise<number>((resolve, reject) => {
@@ -35,7 +37,6 @@ export class Pjs{
     private _slideLayouts_rels:any= {}
     private _slides_rels:any = {}
     private _theme:any = {}
-    private _colorMap:any = {}
     public themeColors:any = {}
     private _rels = {}
     private _presProps={}
@@ -51,21 +52,24 @@ export class Pjs{
     public cnv:Canvas | undefined
     public aspectRatio=1
 
-    slide = new Slide()
+    // slide = new Slide()
+    Slides:{ [key: string]: Slide } = {}
+    Masters:{ [key: string]: Slide }= {}
+    Layouts: { [key: string]: Slide } = {}
+    Themes: { [key: string]: any } = {}
 
+   
     
-  async readFile(files:any){
+  private async readFile(files:any){
     return new Promise <string> (async (res, rej)=>{
       this._zip = await zipInput.loadAsync(files)
-
-
+        
         this._zip.folder('ppt/slideLayouts')?.forEach(async (path:string,file:any)=>{
             if(!path.includes('rels')){
                 let a = await this._zip.files['ppt/slideLayouts/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
                 this._slideLayouts[path]=a
             }
-        })
-        
+        })       
     
         this._zip.folder('ppt/slideLayouts/_rels').forEach(async (path:string,file:string)=>{
         if(path.includes('rels')){
@@ -85,7 +89,6 @@ export class Pjs{
             this._slides_rels[path] = a
           }
          })
-
          this._zip.folder('ppt/slideMasters').forEach(async (path:string,file:string)=>{
           if(!path.includes('rels')){
             let a = await this._zip.files['ppt/slideMasters/' + path].async('text').then((txt:string)=>{return(parser.parse(txt));})
@@ -125,7 +128,143 @@ export class Pjs{
         
   }
 
+ 
+  async init(files:any){
+    return new Promise<String>(async(res, rej)=>{
+      this._zip = await zipInput.loadAsync(files)
+
+      // Read Them
+      for (let f of Object.keys(this._zip.files)){
+        if(f.includes('ppt/theme/theme')){
+          let fname:any = f.split('/').pop()
+          let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+          this.Themes[fname]=a['elements'][0]
+        }
+      }
+      // Read MasterSlide and rel
+        // set slidetype to master
+        for (let f of Object.keys(this._zip.files)){
+          if(f.includes('ppt/slideMasters/slideMaster')){
+            let fname:any = f.split('/').pop()
+            let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+            let master = new Slide(a)
+            master.type='master'
+            this.Masters[fname]=master
+          }
+        }
+        for (let f of Object.keys(this._zip.files)){
+          if(f.includes('ppt/slideMasters/_rels/slideMaster')){
+            let fname:any = f.split('/').pop()
+            let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+            let rel = new Rel(a)
+            let slide = this.Masters[fname.replace('.rels','')] as Slide
+            slide.rel=rel
+            // associate master with theme
+            let themeRef:any = rel.getByType('theme')
+            if(Object.keys(themeRef).length>0){
+              themeRef = themeRef[0].split('/').pop()
+              slide.theme = this.Themes[themeRef]
+            }
+          }
+        }
+        
+      // Read LayoutSlide and rel
+        // set slidetype to layout        
+        for (let f of Object.keys(this._zip.files)){
+          if(f.includes('ppt/slideLayouts/slideLayout')){
+            let fname:any = f.split('/').pop()
+            let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+            let layout = new Slide(a)
+            layout.type='layout'
+            this.Layouts[fname]=layout
+          }
+        }
+        // set master to layout
+        for (let f of Object.keys(this._zip.files)){
+          if(f.includes('ppt/slideLayouts/_rels/slideLayout')){
+            let fname:any = f.split('/').pop()
+            let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+            let rel = new Rel(a)
+            let slide = this.Layouts[fname.replace('.rels','')] as Slide
+            slide.rel=rel
+            let masterRef:any = rel.getByType('slideMaster')
+
+            // associate layout with master
+            if(Object.keys(masterRef).length>0){
+              masterRef = masterRef[0].split('/').pop()
+              slide.master = this.Masters[masterRef]
+            }
+           
+          }
+        }
+
+         
+      // Read Slide and rel
+        // set slidetype to slide
+        for (let f of Object.keys(this._zip.files)){
+          if(f.includes('ppt/slides/slide')){
+            let fname:any = f.split('/').pop()
+            let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+            let slide = new Slide(a)
+            slide.type='slide'
+            this.Slides[fname]=slide
+          }
+        }
+        // set layout to slide
+        for (let f of Object.keys(this._zip.files)){
+          if(f.includes('ppt/slides/_rels/slide')){
+            let fname:any = f.split('/').pop()
+            let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+            let rel = new Rel(a)
+            let slide = this.Slides[fname.replace('.rels','')] as Slide
+            slide.rel=rel
+            let layoutRef:any = rel.getByType('slideLayout')
+            if(Object.keys(layoutRef).length>0){
+              layoutRef = layoutRef[0].split('/').pop()
+              slide.layout = this.Layouts[layoutRef]
+            }
+            // console.log(slide.getbgObj())
+            // console.log(slide.layout?.getbgObj())
+            // console.log(slide.layout?.master?.getbgObj())
+          }
+        }
+        this._presentation = await this._zip.files['ppt/presentation.xml'].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
+        let size:any = getbyPath(this._presentation,'p:presentation/p:sldSz')
+        if(size!=null){
+          this.width = parseInt(size['attributes']['cx'])/(914400)*96
+          this.height = parseInt(size['attributes']['cy'])/(914400)*96
+          this.aspectRatio = this.width/this.height
+        }
+        // this.height = parseInt(this._presentation['p:presentation']['p:sldSz']['@_cy'])/(914400)*96
+        // this.aspectRatio = this.width/this.height
+        
+        
+
   
+        
+        
+
+
+      
+
+      res("Init")
+    });
+  }
+
+  async zipFolderRead(path:string){
+    return new Promise <Object>((res, rej)=>{
+      let files = this._zip.folder(path)
+      for (let f in files){
+        console.log(f)
+      }
+      for (let f of files){
+        console.log(f)
+      }
+    })
+  }
+
+  
+
   // set canvas, calculate Aspect ratios for ppt and canvas
   set setCanvas(cnv:HTMLCanvasElement) {
     this.cnv = new Canvas(cnv);
@@ -142,49 +281,47 @@ export class Pjs{
   }
   // Slide functions
 
-  getSlideBG(n:number){
-    // 1. get bg object from slide or slide layout or slide master
-    let slideObj = getNested(this._slides,'slide'+n+'.xml')
-    let bg:BGProps = getNested(slideObj,'p:sld','p:cSld','p:bg')
-
-    // 2. get Color map from respective Master
-    let masterName = this.slide.getMasterLayoutName(this._slideLayouts_rels,n)
-    let slideMaster = this._slideMasters[masterName]
-    let clrMap = getNested(slideMaster,'p:sldMaster','p:clrMap')
-    console.log(clrMap)
-
-    // 3. get bg object by checking in order of Slide, Layout and Master
-
+  drawShape(shape:Shape){
+    if(this.cnv){
+      this.cnv.shape=shape
+      this.cnv.draw()
+    }
     
-    if(typeof(bg)=='undefined'){
-      let layoutName = this.slide.getSlideLayoutName(this._slides_rels,n)
-      let slideLayout = this._slideLayouts[layoutName]
-      bg = getNested(slideLayout,'p:sldLayout','p:cSld','p:bg')
-    }
-    if(typeof(bg)=='undefined'){
-      bg = getNested(slideMaster,'p:sldMaster','p:cSld','p:bg')
-    }
-
-    console.log(bg)
-    let bgVal = new Bg(bg,clrMap,this.themeColors)
-
-    return {type: bgVal.type, val:bgVal.val}   
-}
-
-  drawSlide(n:number){
-
-    // getSlideBG
-
-    // CreateBGShape
-    let BGShape= new Shape()
-    BGShape.x=0
-    BGShape.y=0
-    BGShape.w=this.width
-    BGShape.h=this.height
-
   }
 
-  drawShape(shape:Shape){
+  drawSlide(n:number){
+    let slide = this.Slides['slide'+n+'.xml']
+
+    // 1. get Color Map
+    let clrMap = slide.clrMap
+    if(clrMap==null){
+      clrMap = slide.layout?.clrMap
+    }
+    if(clrMap==null){
+      clrMap = slide.layout?.master?.clrMap
+    }
+   
+    // 2. get BG
+    let bg = slide.getbgObj()
+    if(bg==null){
+      bg = slide.layout?.getbgObj()
+    }
+    if(bg==null){
+      bg = slide.layout?.master?.getbgObj()
+    }
+    let BGShape= new Shape(0,0,this.width, this.height)
+    BGShape.stroke.fill.fillType='noFill'
+    if(bg['elements'][0]['name'] == 'p:bgPr'){ 
+      BGShape.fill=new Fill(bg['elements'][0]['elements'][0], clrMap, slide.layout?.master?.theme)
+  }
+  if(bg['elements'][0]['name'] == 'p:bgRef'){
+      // no fill object in bg Object, add color to fill object
+      BGShape.fill.fillType="solidFill"
+      let clrObj = bg['elements'][0]['elements'][0]
+      let color=new Color(clrObj,clrMap,slide.layout?.master?.theme)
+      BGShape.fill.fillVal =color.getColor()     
+  }
+  this.drawShape(BGShape)
 
   }
 
