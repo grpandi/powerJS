@@ -28,15 +28,13 @@ export class Fill{
       if(this.fillObj==undefined){return}
       if(this.fillObj['name']=='a:solidFill'){ 
         this.type='solidFill'       
-        let clrObj:any = getbyPath(this.fillObj,'a:solidFill')
-        if(clrObj!=null){
-          let clr = new Color(clrObj['elements'][0], this.clrMap, this.theme)
-          this.val = clr.getColor()
-        }
+        let clr = new Color(this.fillObj['elements'][0], this.clrMap, this.theme)
+        this.val = clr.getColor()
+
       }
       if(this.fillObj['name']=='a:gradFill'){
         this.type = "gradientFill"                                 
-        let gradStopObj:any = getbyPath(this.fillObj, 'a:gradFill/a:gsLst')
+        let gradStopObj:any = getbyPath(this.fillObj, 'a:gsLst')
         let val: { gradient: { pos: number; clr: string }[]; linang: number } = { gradient: [], linang: 0 }
         for (let gs of gradStopObj['elements']){
           let clrClass = new Color(gs['elements'][0], this.clrMap, this.theme)
@@ -44,11 +42,18 @@ export class Fill{
           let gsPos:any = parseInt(gs['attributes']['pos'])/1000
           val.gradient.push({pos:gsPos,clr})
         }
-        let linangObj:any = getbyPath(this.fillObj, 'a:gradFill/a:lin')
+        let linangObj:any = getbyPath(this.fillObj, 'a:lin')
         if(linangObj!=null){
           val.linang = parseInt(linangObj['attributes']['ang'])/60000
         }
         this.val = val
+      }
+      if(this.fillObj['name']=='a:blipFill'){
+        this.type = "imageFill"
+        let imgFillObj:any = getbyPath(this.fillObj, 'a:blip')
+        let imgFill = new ImageFill()
+        imgFill.fillSrc = imgFillObj['attributes']['r:embed']
+        this.val = imgFill
       }
     }
     set fillType(t:BGtype){this.type = t}
@@ -248,6 +253,7 @@ export class Color{
     
     private readsrgbClr(){
       let clr = this.clrObject['attributes']['val']
+      if(clr.includes("#")==false){clr="#"+clr}
       this.setLumOff('a:srgbClr')
       if(this.lumOff>0){                
         // convert to hex to rgb
@@ -257,6 +263,7 @@ export class Color{
         // convert to Hex by replacing lumOff
         clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
       }
+
       return clr
     }
     
@@ -406,6 +413,7 @@ export class Stroke{
     cap = ""
     cmpd = ""
     algn =""
+    dash = ""
     fill =new Fill()
     constructor(){
         this.w = 9525;
@@ -415,6 +423,29 @@ export class Stroke{
         this.fill =new Fill()
         this.fill.fillType ="solidFill"
         this.fill.fillVal = "#000000" 
+    }
+}
+
+export class ImageFill{
+    private type = "tile"
+    private src = ""
+    private img:any
+    constructor(){
+        this.type = "tile"
+        this.src = ""
+        this.img = new Image()
+    }
+    set fillType(t:string){this.type = t}
+    set fillSrc(s:string){this.src = s}
+    set fillImg(i:any){this.img = i}
+    getType():string{
+        return this.type
+    }
+    getSrc():string{
+        return this.src
+    }
+    getImg():any{
+        return this.img
     }
 }
 

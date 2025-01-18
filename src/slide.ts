@@ -1,6 +1,6 @@
 import {getNested,getbyPath} from './util'
 import {Shape} from './shape'
-import { get } from 'http'
+import { Fill,Color } from './style'
 
 export class SlideOld  {
     // slide sizes are in DXA
@@ -147,21 +147,152 @@ export class Slides{
 
 export class Slide{
     private _slideObj:any
-    type = 'slide'
+    private bgShp:Shape|undefined
+    private type = 'slide'
+    clrMap:any
     master:Slide|undefined
     layout:Slide|undefined
     rel:Rel|undefined
     theme:any
+    images:any={}
+    width=0
+    height=0
+    private shapes: Shape[]=[]
 
-    constructor(obj?:Object){        
-        this._slideObj = obj;
+    constructor(){ 
+        // if(obj){
+        //     this._slideObj = obj;
+        //     if(this._slideObj['elements'][0]['name']=='p:sldLayout'){this.type='layout'}
+        //     if(this._slideObj['elements'][0]['name']=='p:sldMaster'){this.type='master'}
+        // }     
+        
     }
 
+    set obj(obj:any){
+        this._slideObj = obj
+        if(this._slideObj['elements'][0]['name']=='p:sldLayout'){this.type='layout'}
+        if(this._slideObj['elements'][0]['name']=='p:sldMaster'){this.type='master'}
+        this.setClrMap()
+        this.setShape()  
+    }
 
-    get clrMap():any{
+    private setClrMap(){
+        let clrMapObj:any =getbyPath(this._slideObj,this.topName() + '/p:clrMap')
+        if(clrMapObj!=null){
+            this.clrMap = clrMapObj['attributes']
+        }else{
+            if(this.type =='layout'){
+                clrMapObj = getbyPath(this.master?._slideObj,'p:sldMaster/p:clrMap')
+                if(clrMapObj!=null){
+                    this.clrMap = clrMapObj['attributes']
+                }
+            }
+            if(this.type =='slide'){
+                clrMapObj = getbyPath(this.layout?._slideObj,'p:sldLayout/p:clrMap')
+                if(clrMapObj!=null){
+                    this.clrMap = clrMapObj['attributes']
+                }else{
+                    clrMapObj = getbyPath(this.layout?.master?._slideObj,'p:sldMaster/p:clrMap')
+                    if(clrMapObj!=null){
+                        this.clrMap = clrMapObj['attributes']
+                    }
+                }
+            }
+        }
+    }
+
+    private setBG(){
+        let clrMap = this.cclrMap
+        if(clrMap==null){
+            clrMap = this.layout?.cclrMap
+        }
+        if(clrMap==null){
+            clrMap = this.layout?.master?.cclrMap
+        }
+                   
+        // 2. get BG
+        let bg = this.getbgObj()
+        let src = 'slide'
+        if(bg==null){
+            bg = this.layout?.getbgObj()
+            src = 'layout'
+        }
+        if(bg==null){
+            bg = this.layout?.master?.getbgObj()
+            src = 'master'
+        }
+        this.bgShp= new Shape(0,0,this.width, this.height)
+        this.bgShp.src = src
+        this.bgShp.stroke.fill.fillType='noFill'
+        if(bg['elements'][0]['name'] == 'p:bgPr'){ 
+            this.bgShp.fill=new Fill(bg['elements'][0]['elements'][0], clrMap, this.layout?.master?.theme)
+        }
+        if(bg['elements'][0]['name'] == 'p:bgRef'){
+            // no fill object in bg Object, add color to fill object
+            this.bgShp.fill.fillType="solidFill"
+            let clrObj = bg['elements'][0]['elements'][0]
+            let color=new Color(clrObj,clrMap,this.layout?.master?.theme)
+            this.bgShp.fill.fillVal =color.getColor()     
+        }
+
+    }
+
+    private setShape(){
+        // console.log(this._slideObj) 
+        let path = 'p:sld/p:cSld/p:spTree' 
+        if(this.type=='master') {path = 'p:sldMaster/p:cSld/p:spTree'}
+        if(this.type=='layout') {path = 'p:sldLayout/p:cSld/p:spTree'}
+        let shpes:any = getbyPath(this._slideObj,path)
+
+        // Get Shapes
+        if(shpes != null){
+            for (let sp of shpes['elements']){
+                if(sp['name']=='p:sp'){
+                    this.readShape(sp)
+                }
+                if(sp['name']=='p:grpSp'){
+                    // console.log(sp)
+                }
+                if(sp['name']=='p:pic'){
+                    // console.log(sp)
+                }
+                // if(sp['name']=='a:graphicFrame'){}
+                if(sp['name']=='p:cxnSp'){
+                    // console.log(sp)
+                }
+
+            }
+
+        }
+        
+
+
+    }
+
+    private readShape(obj:any){
+        // console.log(obj)
+        let shp = new Shape()
+        shp.slideReference = this
+        shp.obj = obj
+        let shpProp:any = getbyPath(obj,'p:sp/p:spPr')
+        if('elements' in shpProp){
+
+        }else{
+            
+        }
+
+        this.shapes.push(shp)
+        
+        // console.log(shp)
+
+    }
+    private readShpGrp(obj:any){}
+    private readShpPic(obj:any){}
+    private readShpCon(obj:any){}
+
+    get cclrMap():any{
         // 'return if it has a clrMap'
         let clrMap:any =getbyPath(this._slideObj,this.topName() + '/p:clrMap')
-
         if(clrMap==null){return null}
         else{
             if(clrMap?.hasOwnProperty('attributes') ){
@@ -205,8 +336,16 @@ export class Slide{
       return bg  
     }
 
-    getShapes(LayoutName:String){
+    getShapeByName(ShapeName:String){
         return {}
+    }
+
+    getShapeById(ShapeID:String){
+        for (let sp of this.shapes){
+            if (sp.id == ShapeID){
+                return sp
+            }
+        }
     }
 
 
@@ -244,7 +383,7 @@ export class Rel{
         for (let i of relElements['elements']) {
         let relType = i['attributes']['Type'].split('/').pop()
         if(relType == type){
-            res[cnt] = i['attributes']['Target'];
+            res[cnt] = i['attributes'];
             cnt++;
             }        
         }
@@ -265,6 +404,7 @@ export class Rel{
 
         return res
     }
+
 }
 
 

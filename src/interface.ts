@@ -12,8 +12,8 @@ export type ThemeColor = 'tx1' | 'tx2' | 'bg1' | 'bg2' | 'accent1' | 'accent2' |
 export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
 export type BGtype = 'noFill'| 'solidFill'|'gradientFill'|'patternFill'|'imageFill'
-
 export type PreSetGeom = 'rect' | 'circle'
+import {Fill, Stroke} from './style'
 
 
 // background
@@ -88,11 +88,10 @@ export interface ImgFillProps{}
 export interface PatternFillProps{}
 // Shape properties
 export interface ShapeProp{
-	id: string | number,
-	name:string,
 	pos:Position,
 	prstGeom?:string,//todo
 	custGeom?:string,//todo
+	fill?:Fill,
 	effect?:string //todo
 	solidFill?:ClrProps,
 	gradFill?:GradFillProps
