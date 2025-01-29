@@ -105,14 +105,61 @@ export class Cn{
     }
 
     draw(){
+        // drawBG
+        if (this.slide.bgShp!=null){
+            this.shape = this.slide.bgShp
+        }
+        // this.bg()
         this.rect()
+
+        // let sp = this.slide.getShapeById("5")
+        // if(sp !=undefined){
+        //     this.shape = sp
+        //     this.rect()
+        // }
+        // let sp = this.slide.getShapeByName("Rectangle 4")
+        // console.log(sp)
+        // if(sp !=undefined){
+        //     this.shape = sp
+        //     this.rect()
+        // }
+
+        for (let sp of this.slide.shapes){
+            this.shape = sp
+            this.rect()
+        }
+    }
+
+    private pptToCnvSz(){
+        console.log(this.shape.x, this.shape.y, this.shape.w, this.shape.h)
+        console.log(this.widthRatio)
+        console.log(this.heightRatio)
+        console.log(this.widthOffset)
+        console.log(this.heightOffset)
+    }
+    bg(){
+        let startX = Math.floor((this.shape.x*this.widthRatio)+this.widthOffset)
+        let startY = Math.floor((this.shape.y*this.heightRatio)+this.heightOffset)
+        let endX =  Math.floor((this.shape.w*this.widthRatio)+this.widthOffset)
+        let endY = Math.floor((this.shape.h*this.heightRatio))-this.heightOffset
+        this.ctx?.beginPath()
+        this.ctx?.moveTo(startX,startY)
+        this.ctx?.lineTo(endX, startY)
+        this.ctx?.lineTo(endX, endY)
+        this.ctx?.lineTo(startX, endY)
+        this.ctx?.closePath()
+        this.fill(startX, startY, endX, endY)
     }
 
     rect(){
-        let startX = (this.shape.x*this.widthRatio)+this.widthOffset
-        let startY = (this.shape.y*this.heightRatio)+this.heightOffset
-        let endX = (this.shape.w*this.widthRatio)-this.widthOffset
-        let endY = (this.shape.h*this.heightRatio)-this.heightOffset
+        console.log(this.shape.x, this.shape.y, this.shape.w, this.shape.h)
+        console.log(this.widthRatio)
+        console.log(this.heightRatio)
+        let startX = Math.floor((this.shape.x*this.widthRatio)+this.widthOffset)
+        let startY = Math.floor((this.shape.y*this.heightRatio)+(this.heightOffset))
+        let endX =  startX + Math.floor((this.shape.w*this.widthRatio))
+        // let endY = startY + Math.floor((this.shape.h*this.heightRatio)-(this.heightOffset))
+        let endY = startY + Math.floor((this.shape.h*this.heightRatio))
         this.ctx?.beginPath()
         this.ctx?.moveTo(startX,startY)
         this.ctx?.lineTo(endX, startY)

@@ -147,7 +147,7 @@ export class Slides{
 
 export class Slide{
     private _slideObj:any
-    private bgShp:Shape|undefined
+    bgShp:Shape|undefined
     private type = 'slide'
     clrMap:any
     master:Slide|undefined
@@ -157,7 +157,7 @@ export class Slide{
     images:any={}
     width=0
     height=0
-    private shapes: Shape[]=[]
+    shapes: Shape[]=[]
 
     constructor(){ 
         // if(obj){
@@ -173,7 +173,10 @@ export class Slide{
         if(this._slideObj['elements'][0]['name']=='p:sldLayout'){this.type='layout'}
         if(this._slideObj['elements'][0]['name']=='p:sldMaster'){this.type='master'}
         this.setClrMap()
-        this.setShape()  
+        this.setShape()
+        if(this.type=="slide") {
+            this.setBG()
+        } 
     }
 
     private setClrMap(){
@@ -202,15 +205,9 @@ export class Slide{
     }
 
     private setBG(){
-        let clrMap = this.cclrMap
-        if(clrMap==null){
-            clrMap = this.layout?.cclrMap
-        }
-        if(clrMap==null){
-            clrMap = this.layout?.master?.cclrMap
-        }
+        
                    
-        // 2. get BG
+        // 1. get BG
         let bg = this.getbgObj()
         let src = 'slide'
         if(bg==null){
@@ -225,13 +222,13 @@ export class Slide{
         this.bgShp.src = src
         this.bgShp.stroke.fill.fillType='noFill'
         if(bg['elements'][0]['name'] == 'p:bgPr'){ 
-            this.bgShp.fill=new Fill(bg['elements'][0]['elements'][0], clrMap, this.layout?.master?.theme)
+            this.bgShp.fill=new Fill(bg['elements'][0]['elements'][0], this.clrMap, this.theme)
         }
         if(bg['elements'][0]['name'] == 'p:bgRef'){
             // no fill object in bg Object, add color to fill object
             this.bgShp.fill.fillType="solidFill"
             let clrObj = bg['elements'][0]['elements'][0]
-            let color=new Color(clrObj,clrMap,this.layout?.master?.theme)
+            let color=new Color(clrObj,this.clrMap,this.theme)
             this.bgShp.fill.fillVal =color.getColor()     
         }
 
@@ -275,12 +272,6 @@ export class Slide{
         shp.slideReference = this
         shp.obj = obj
         let shpProp:any = getbyPath(obj,'p:sp/p:spPr')
-        if('elements' in shpProp){
-
-        }else{
-            
-        }
-
         this.shapes.push(shp)
         
         // console.log(shp)
@@ -336,16 +327,23 @@ export class Slide{
       return bg  
     }
 
-    getShapeByName(ShapeName:String){
-        return {}
+
+    getShapeByName(ShapeName:String):Shape|undefined{
+        for (let sp of this.shapes){
+            if (sp.name == ShapeName){
+                return sp
+            }
+        }
+        return undefined
     }
 
-    getShapeById(ShapeID:String){
+    getShapeById(ShapeID:String): Shape | undefined {
         for (let sp of this.shapes){
             if (sp.id == ShapeID){
                 return sp
             }
         }
+        return undefined
     }
 
 

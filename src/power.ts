@@ -332,15 +332,17 @@ export class Pjs{
   // set canvas, calculate Aspect ratios for ppt and canvas
   set setCanvas(cnv:HTMLCanvasElement) {
     this.cnv = new Cn(cnv);
-    this.cnv.widthRatio=cnv.width/this.width
-    this.cnv.heightRatio=cnv.height/this.height
     this.cnv.aspectRatio=cnv.width/cnv.height
 
     if(this.aspectRatio>this.cnv.aspectRatio){
       this.cnv.heightOffset=(cnv.height-(cnv.width/this.aspectRatio))/2
+      this.cnv.widthRatio=cnv.width/this.width
+      this.cnv.heightRatio=(cnv.height-(2*this.cnv.heightOffset))/this.height
     }
     if(this.aspectRatio<this.cnv.aspectRatio){
       this.cnv.widthOffset=(cnv.width-(cnv.height*this.aspectRatio))/2
+      this.cnv.heightRatio=cnv.height/this.height
+      this.cnv.widthRatio=(cnv.width-(2*this.cnv.widthOffset))/this.width
     }
   }
   // Slide functions
@@ -349,7 +351,8 @@ export class Pjs{
     let slide = this.Slides['slide'+n+'.xml']
     if (this.cnv) {
       this.cnv.slide = slide;
-      this.cnv.drawSlide()
+      // this.cnv.drawSlide()
+      this.cnv.draw()
     }
 
   }

@@ -1,6 +1,6 @@
 
 import {PreSetGeom, ShapeProp} from './interface'
-import {Fill, Stroke} from './style'
+import {Fill, Stroke, Color} from './style'
 import {getbyPath} from './util'
 import { Slide } from './slide';
 
@@ -17,6 +17,8 @@ export class Shape{
     private lnFillPro=false
     fill:Fill = new Fill()
     stroke:Stroke = new Stroke()
+    effectFill:Fill|undefined
+    fontFill:Fill|undefined
     src = 'slide'
     name = ""
     id = ""
@@ -41,16 +43,17 @@ export class Shape{
     set obj (obj:any){
         this._shapes = obj
         let nvPr:any = getbyPath(obj, "p:sp/p:nvSpPr/p:cNvPr")
-        if('attributes' in nvPr){
+        if(nvPr!=null){
             this.name=nvPr['attributes']['name']
             this.id = nvPr['attributes']['id']
             // 'Hidden' attribute?
         }
         let spPr:any = getbyPath(obj,'p:sp/p:spPr')
         // console.log(spPr)
-        if('elements' in spPr){
+        if(spPr!=null){
             for(let el in spPr['elements']){
                 // console.log(el)
+                this.spPr=true
                 if(spPr['elements'][el]['name']=='a:xfrm'){
                     let aOff:any = getbyPath(spPr['elements'][el],'a:xfrm/a:off')
                     if(aOff !=null){
@@ -61,9 +64,10 @@ export class Shape{
                     if(aExt !=null){
                         this.w = parseInt(aExt['attributes']['cx'])/(914400)*96
                         this.h = parseInt(aExt['attributes']['cy'])/(914400)*96
-                    }                   
+                    }
+                    this.posProp=true                   
                 }
-
+                // line fill props
                 if(spPr['elements'][el]['name']=='a:solidFill'){
                     this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)
                     this.fillProp=true                   
@@ -80,13 +84,14 @@ export class Shape{
                     this.fill.fillType="noFill"
                     this.fillProp=true                 
                 }
-                
+                // preset geometry
                 if(spPr['elements'][el]['name']=='a:prstGeom'){
                     this.prstGeom = spPr['elements'][el]['attributes']['prst']
                 }
 
                 // outLine
                 if(spPr['elements'][el]['name']=='a:ln'){
+                    this.lnProp=true
                     let lnElements = spPr['elements'][el]['elements']
                     for (let el1 in lnElements ){
                         if(lnElements[el1]['name']=='a:solidFill'){
@@ -105,24 +110,75 @@ export class Shape{
                             this.stroke.dash = lnElements[el1]['attributes']['val']                
                         }
                         // round (todo)
-                        // tailend(todo)
                         // custDash(todo)
                         // mitter (todo)
-                        // headEnd(todo)
+                        // headEnd
+                        if(lnElements[el1]['name']=='a:headEnd'){
+                           this.stroke.hEnd.len=  lnElements[el1]['attributes']['len'] 
+                           this.stroke.hEnd.len=  lnElements[el1]['attributes']['type']
+                           this.stroke.hEnd.len=  lnElements[el1]['attributes']['w']             
+                        }
+                        // tailend
+                        if(lnElements[el1]['name']=='a:tailEnd'){
+                            this.stroke.hEnd.len=  lnElements[el1]['attributes']['len'] 
+                            this.stroke.hEnd.len=  lnElements[el1]['attributes']['type']
+                            this.stroke.hEnd.len=  lnElements[el1]['attributes']['w']             
+                         }
 
 
                     }
                 }
 
-
                 // custom geometry (todo)
-                // preset geometry (todo)
+                
                 // effect Container (todo)
-                
-                
+                                
 
             }
         }else{this.spPr=false}
+
+        let spStyle:any = getbyPath(obj,'p:sp/p:style')
+        if(spStyle!=null){
+            for(let el in spStyle['elements']){
+
+                // line fill (set if it is not set previously)
+                if(spStyle['elements'][el]['name']=='a:lnRef'){
+                    if(this.lnFillPro!=true){
+                        let color = new Color(spStyle['elements'][el]['elements'][0],this.slideRef?.clrMap,this.slideRef?.theme)
+                        this.stroke.fill.fillType="solidFill"
+                        this.stroke.fill.fillVal = color.getColor()
+                        this.lnFillPro=true
+                    }                                       
+                }
+                // shp fill (set if not set previoustly)
+                if(spStyle['elements'][el]['name']=='a:fillRef'){
+                    if(this.fillProp!=true){
+                        let color = new Color(spStyle['elements'][el]['elements'][0],this.slideRef?.clrMap,this.slideRef?.theme)
+                        this.fill.fillType="solidFill"
+                        this.fill.fillVal=color.getColor()
+                        this.fillProp=true
+                    }                                       
+                }
+                // font fill
+                if(spStyle['elements'][el]['name']=='a:fontRef'){
+                    let color = new Color(spStyle['elements'][el]['elements'][0],this.slideRef?.clrMap,this.slideRef?.theme)
+                    this.fontFill=new Fill()
+                    this.fontFill.fillType="solidFill"
+                    this.fontFill.fillVal=color.getColor()                 
+                }
+
+                // effect
+                if(spStyle['elements'][el]['name']=='a:effectRef'){
+                    this.effectFill = new Fill(spStyle['elements'][el]['elements'][0],this.slideRef?.clrMap,this.slideRef?.theme)                  
+                }
+
+            }   
+        }
+
+        let txtBody:any = getbyPath(obj,'p:sp/p:txBody')
+        if(txtBody!=null){
+            
+        }
     }
 
     getShapeProps():ShapeProp{

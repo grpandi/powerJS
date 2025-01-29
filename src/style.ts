@@ -233,11 +233,13 @@ export class Color{
     }
 
     private readSchemeClr(){
-      // let schemeClrObj:any = getbyPath(this.clrObject, 'a:schemeClr')
       let clrVal = this.clrObject['attributes']['val']
+      clrVal = this.clrMap[clrVal]
+      if(clrVal==null){clrVal =this.clrObject['attributes']['val'] }
       this.setLumOff('a:schemeClr')
-      let themeClrObj:any = getbyPath(this.theme,'a:themeElements/a:clrScheme/a:'+this.clrMap[clrVal])
+      let themeClrObj:any = getbyPath(this.theme,'a:themeElements/a:clrScheme/a:'+clrVal)
       let nclr = new Color()
+      // console.log(themeClrObj)
       nclr.clrObj = themeClrObj['elements'][0]
       let clr:any = nclr.getColor()
       if(this.lumOff>0){                
@@ -415,6 +417,10 @@ export class Stroke{
     algn =""
     dash = ""
     fill =new Fill()
+    hEnd ={len:"",type:"", wid:""}
+    // len/wid:"Large(lg), Medium(med), Small(sm) "
+    // type: "Arrow(arrow), Diamond(diamond), None(none), Oval(oval), Stealth(stealth), Triagle(triangle)"
+    tEnd = {len:"",type:"", wid:""}
     constructor(){
         this.w = 9525;
         this.cap = "butt" //flat(butt), round, square
