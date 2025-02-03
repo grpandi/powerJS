@@ -1,3 +1,4 @@
+import { parse } from 'path';
 import {BGtype} from './interface';
 import {getbyPath} from './util'
 
@@ -74,6 +75,7 @@ export class Color{
   theme:any;
   alpha=1;
   lumOff:number = 0
+  shade:number = 1
   private val = "#FFFFFF"
   constructor(clrObj?:any, clrMp?:any, thm?:any){
     if(clrObj!=undefined){
@@ -181,23 +183,18 @@ export class Color{
       if(hueElemVal != null){
         hsl.hue = parseInt(hueElemVal['attributes']['val'])/10000
       }
-      this.setLumOff('a:hslClr')
-      let clr = this.HSLToHex(hsl.hue, hsl.saturation, hsl.lightness + this.lumOff)
+      this.clrAddOns('a:hslClr')
+      let clr = this.HSLToHex(hsl.hue, hsl.saturation, hsl.lightness + this.lumOff)            
+      if(this.shade<1){clr=this.addShader(clr)}
       return clr
     }
     // to test
     private readPreset(){
       let preSetval = this.clrMap[this.clrObject['attributes']['val']]
-      this.setLumOff('a:prstClr')
+      this.clrAddOns('a:prstClr')
       let clr = this.presetColors[preSetval.toLowerCase()]
-      if(this.lumOff>0){                
-        // convert to hex to rgb
-        clr = this.hexToRGB(clr)
-        // convert rgb to hsl
-        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
-        // convert to Hex by replacing lumOff
-        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
-    }
+      if(this.lumOff>0){clr=this.lumOffSet(clr)}             
+      if(this.shade<1){clr=this.addShader(clr)}
       return clr
     }
     // to test
@@ -206,29 +203,19 @@ export class Color{
       let r = parseInt(rgbObj['attributes']['r'])
       let g = parseInt(rgbObj['attributes']['g'])
       let b = parseInt(rgbObj['attributes']['b'])
-      this.setLumOff('a:scrgbClr')
+      this.clrAddOns('a:scrgbClr')
       let clr:any = this.rgbtoHex(r,g,b)
-      if(this.lumOff>0){                
-        // convert rgb to hsl
-        clr = this.rgbToHSL(r, g, b)
-        // convert to Hex by replacing lumOff
-        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
-      }
+      if(this.lumOff>0){clr=this.lumOffSet(clr)}             
+      if(this.shade<1){clr=this.addShader(clr)}
       return clr
     }
   
     private readSysClr(){
       let clrVal = this.clrObject['attributes']['val']
-      this.setLumOff('a:sysClr')
+      this.clrAddOns('a:sysClr')
       let clr = this.systemColors[clrVal.toLowerCase()]
-      if(this.lumOff>0){                
-        // convert to hex to rgb
-        clr = this.hexToRGB(clr)
-        // convert rgb to hsl
-        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
-        // convert to Hex by replacing lumOff
-        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
-      }
+      if(this.lumOff>0){clr=this.lumOffSet(clr)}             
+      if(this.shade<1){clr=this.addShader(clr)}
       return clr
     }
 
@@ -236,45 +223,53 @@ export class Color{
       let clrVal = this.clrObject['attributes']['val']
       clrVal = this.clrMap[clrVal]
       if(clrVal==null){clrVal =this.clrObject['attributes']['val'] }
-      this.setLumOff('a:schemeClr')
+      this.clrAddOns('a:schemeClr')
       let themeClrObj:any = getbyPath(this.theme,'a:themeElements/a:clrScheme/a:'+clrVal)
       let nclr = new Color()
       // console.log(themeClrObj)
       nclr.clrObj = themeClrObj['elements'][0]
       let clr:any = nclr.getColor()
-      if(this.lumOff>0){                
-        // convert to hex to rgb
-        clr = this.hexToRGB(clr)
-        // convert rgb to hsl
-        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
-        // convert to Hex by replacing lumOff
-        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
-      }
+      if(this.lumOff>0){clr=this.lumOffSet(clr)}             
+      if(this.shade<1){clr=this.addShader(clr)}
       return clr
     }
     
     private readsrgbClr(){
       let clr = this.clrObject['attributes']['val']
       if(clr.includes("#")==false){clr="#"+clr}
-      this.setLumOff('a:srgbClr')
-      if(this.lumOff>0){                
-        // convert to hex to rgb
-        clr = this.hexToRGB(clr)
-        // convert rgb to hsl
-        clr = this.rgbToHSL(clr.r, clr.g, clr.b)
-        // convert to Hex by replacing lumOff
-        clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
-      }
+      this.clrAddOns('a:srgbClr')
+      if(this.lumOff>0){clr=this.lumOffSet(clr)}             
+      if(this.shade<1){clr=this.addShader(clr)}
 
       return clr
     }
     
-    private setLumOff(path:string){
+    private clrAddOns(path:string){
       let lumOffset:any = getbyPath(this.clrObject, path+'/a:lumOff')
       if(lumOffset != null){
         this.lumOff = parseInt(lumOffset['attributes']['val'])/1000
       }
+
+      let shdOffset:any = getbyPath(this.clrObject, path+'/a:shade')
+      if(shdOffset != null){
+        this.shade = (parseInt(shdOffset['attributes']['val'])/1000)/100
+      }
       
+    }
+
+    private lumOffSet(hexclr:any){
+      let clr:any = this.hexToRGB(hexclr)
+      clr = this.rgbToHSL(clr.r, clr.g, clr.b)
+      clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
+      return hexclr
+    }
+    private addShader(hexclr:any){
+      let clr:any = this.hexToRGB(hexclr)
+      clr.r = Math.round(clr.r*this.shade)
+      clr.g = Math.round(clr.g*this.shade)
+      clr.b = Math.round(clr.b*this.shade)
+      clr = this.rgbtoHex(clr.r, clr.g, clr.b)
+      return clr
     }
 
 

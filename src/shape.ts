@@ -5,6 +5,7 @@ import {getbyPath} from './util'
 import { Slide } from './slide';
 
 
+
 export class Shape{
     // slide sizes are in DXA
     // - 914400 EMUs is 1 inch
@@ -31,6 +32,7 @@ export class Shape{
     h=0
     w=0
     prstGeom:PreSetGeom='rect'
+    guide:any = []
      
     constructor(x:number=0,y:number=0,w:number=0,h:number=0){
         this.x=x;this.y=y;this.h=h;this.w=w
@@ -87,6 +89,17 @@ export class Shape{
                 // preset geometry
                 if(spPr['elements'][el]['name']=='a:prstGeom'){
                     this.prstGeom = spPr['elements'][el]['attributes']['prst']
+                    let avLst:any = getbyPath(spPr['elements'][el],'a:avLst')
+                    if(avLst !=null){
+                        let avLstEl = avLst['elements']
+                        for(let el1 in avLstEl){
+                            if(avLstEl[el1]['name']=='a:gd'){
+                                let name:any = avLstEl[el1]['attributes']['name']
+                                let fmla:any = avLstEl[el1]['attributes']['fmla']
+                                this.guide.push({name:name, fmla:fmla})
+                            }
+                        }
+                    }
                 }
 
                 // outLine
@@ -174,6 +187,8 @@ export class Shape{
 
             }   
         }
+
+        
 
         let txtBody:any = getbyPath(obj,'p:sp/p:txBody')
         if(txtBody!=null){

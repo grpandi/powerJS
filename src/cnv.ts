@@ -12,6 +12,10 @@ export class Cn{
     aspectRatio = 1
     shape:Shape=new Shape()
     slide:Slide = new Slide()
+    x=0
+    y=0
+    cx=0
+    cy=0
     
     constructor(cnv:HTMLCanvasElement){
         this.cnv = cnv;
@@ -23,8 +27,7 @@ export class Cn{
         this.shape=shape
     }
 
-    fill(x:number,y:number,w:number,h:number){
-        console.log(x,y,w,h)
+    fill(){
         if(this.ctx!=null){
             if(this.shape.fill.getType()=="noFill"){
                 this.ctx.globalAlpha = 0
@@ -38,12 +41,11 @@ export class Cn{
             if(this.shape.fill.getType()=="gradientFill"){
                 let val:any = this.shape.fill.getVal()
                 let angle = val.linang * Math.PI / 180
-                let x2 = w*Math.cos(angle)
-                let y2 = h*Math.sin(angle)
-                const lineargradient = this.ctx.createLinearGradient(x, y, x2, y2);
+                let x2 = this.cx*Math.cos(angle)
+                let y2 = this.cy*Math.sin(angle)
+                const lineargradient = this.ctx.createLinearGradient(this.x, this.y, x2, y2);
                 if(val.gradient){
                     for( let grad of val.gradient){
-                        console.log(grad.clr)
                         lineargradient.addColorStop(grad.pos/100,grad.clr)
                     }
                 }
@@ -53,10 +55,7 @@ export class Cn{
             }
             
             if(this.shape.fill.getType()=="imageFill"){
-                let startX = (this.shape.x*this.widthRatio)+this.widthOffset
-                let startY = (this.shape.y*this.heightRatio)+this.heightOffset
-                let endX = (this.shape.w*this.widthRatio)-this.widthOffset
-                let endY = (this.shape.h*this.heightRatio)-this.heightOffset
+                this.getCrd()
                 let imgId = this.shape.fill.getVal()
                 if(this.shape.src=='slide'){
                     let img = new Image()
@@ -64,7 +63,7 @@ export class Cn{
                     img.onload = () =>{
                         if (this.ctx) {
                             this.ctx.globalAlpha=this.shape.fill.alpha
-                            this.ctx.drawImage(img, x, y,w,h-this.heightOffset);
+                            this.ctx.drawImage(img, this.x, this.y,this.cx,this.cy);
                         }
                     }
                     img.src ="data:image/jpg;base64,"+ this.slide.images[imgId.src]
@@ -74,7 +73,7 @@ export class Cn{
         }
         
     }
-    stroke(x:number,y:number,w:number,h:number){
+    stroke(){
         if(this.ctx!=null){
             if(this.shape.stroke.fill.getType()=="noFill"){
                 this.ctx.globalAlpha = 0
@@ -88,9 +87,9 @@ export class Cn{
             if(this.shape.stroke.fill.getType()=="gradientFill"){
                 let val = this.shape.stroke.fill.getVal()
                 let angle = val.linang * Math.PI / 180
-                let x2 = w*Math.cos(angle)
-                let y2 = h*Math.sin(angle)
-                const lineargradient = this.ctx.createLinearGradient(x, y, x2, y2);
+                let x2 = this.cx*Math.cos(angle)
+                let y2 = this.cy*Math.sin(angle)
+                const lineargradient = this.ctx.createLinearGradient(this.x, this.y, x2, y2);
                 if(val.gradient){
                     for( let grad of val.gradient){
                         lineargradient.addColorStop(grad.pos/100,grad.clr)
@@ -126,50 +125,59 @@ export class Cn{
 
         for (let sp of this.slide.shapes){
             this.shape = sp
-            this.rect()
+            if(sp.prstGeom=='rect'){
+                this.rect()
+            }
+            if(sp.prstGeom=='triangle'){
+                this.triangle()
+            }
+            
         }
     }
 
-    private pptToCnvSz(){
-        console.log(this.shape.x, this.shape.y, this.shape.w, this.shape.h)
-        console.log(this.widthRatio)
-        console.log(this.heightRatio)
-        console.log(this.widthOffset)
-        console.log(this.heightOffset)
-    }
-    bg(){
-        let startX = Math.floor((this.shape.x*this.widthRatio)+this.widthOffset)
-        let startY = Math.floor((this.shape.y*this.heightRatio)+this.heightOffset)
-        let endX =  Math.floor((this.shape.w*this.widthRatio)+this.widthOffset)
-        let endY = Math.floor((this.shape.h*this.heightRatio))-this.heightOffset
-        this.ctx?.beginPath()
-        this.ctx?.moveTo(startX,startY)
-        this.ctx?.lineTo(endX, startY)
-        this.ctx?.lineTo(endX, endY)
-        this.ctx?.lineTo(startX, endY)
-        this.ctx?.closePath()
-        this.fill(startX, startY, endX, endY)
+    
+    
+    getCrd(){
+        this.x =  Math.floor((this.shape.x*this.widthRatio)+this.widthOffset)
+        this.y =  Math.floor((this.shape.y*this.heightRatio)+this.heightOffset)
+        this.cx =  this.x + Math.floor((this.shape.w*this.widthRatio))
+        this.cy = this.y + Math.floor((this.shape.h*this.heightRatio))
     }
 
     rect(){
-        console.log(this.shape.x, this.shape.y, this.shape.w, this.shape.h)
-        console.log(this.widthRatio)
-        console.log(this.heightRatio)
-        let startX = Math.floor((this.shape.x*this.widthRatio)+this.widthOffset)
-        let startY = Math.floor((this.shape.y*this.heightRatio)+(this.heightOffset))
-        let endX =  startX + Math.floor((this.shape.w*this.widthRatio))
-        // let endY = startY + Math.floor((this.shape.h*this.heightRatio)-(this.heightOffset))
-        let endY = startY + Math.floor((this.shape.h*this.heightRatio))
+        this.getCrd()
         this.ctx?.beginPath()
-        this.ctx?.moveTo(startX,startY)
-        this.ctx?.lineTo(endX, startY)
-        this.ctx?.lineTo(endX, endY)
-        this.ctx?.lineTo(startX, endY)
+        this.ctx?.moveTo(this.x,this.y)
+        this.ctx?.lineTo(this.cx, this.y)
+        this.ctx?.lineTo(this.cx, this.cy)
+        this.ctx?.lineTo(this.x, this.cy)
         this.ctx?.closePath()
-        this.fill(startX, startY, endX, endY)
-        this.stroke(startX, startY, endX, endY)        
+        this.fill()
+        this.stroke()       
     }
 
+    triangle(){
+        this.getCrd()
+        let pos:any = 0.5
+        if(this.shape.guide.length>0){
+            if(this.shape.guide[0].name == 'adj'){
+                let fmla = this.shape.guide[0].fmla
+                if(fmla.includes('val')){
+                    pos = parseInt(fmla.split(' ')[1])/100000
+                }
+            }
+            
+        }
+        console.log(pos)
+        let x2 = this.x + ((this.cx-this.x)*pos)
+        this.ctx?.beginPath();
+        this.ctx?.moveTo(this.x, this.cy); // Move to the first vertex
+        this.ctx?.lineTo(x2, this.y); // Draw a line to the second vertex
+        this.ctx?.lineTo(this.cx, this.cy); // Draw a line to the third vertex
+        this.ctx?.closePath();    // Close the path to complete the triangle
+        this.fill()
+        this.stroke()
+    }
     drawSlide(){
         // 1. get Color Map
         let clrMap = this.slide.clrMap

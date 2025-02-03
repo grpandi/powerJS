@@ -12,7 +12,7 @@ export type ThemeColor = 'tx1' | 'tx2' | 'bg1' | 'bg2' | 'accent1' | 'accent2' |
 export type HAlign = 'left' | 'center' | 'right' | 'justify'
 export type VAlign = 'top' | 'middle' | 'bottom'
 export type BGtype = 'noFill'| 'solidFill'|'gradientFill'|'patternFill'|'imageFill'
-export type PreSetGeom = 'rect' | 'circle'
+export type PreSetGeom = 'rect' | 'circle'|'ellipse'|'roundRect'|'triangle'
 import {Fill, Stroke} from './style'
 
 
