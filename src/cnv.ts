@@ -75,6 +75,7 @@ export class Cn{
     }
     stroke(){
         if(this.ctx!=null){
+            this.ctx.setLineDash(this.shape.stroke.dash)
             if(this.shape.stroke.fill.getType()=="noFill"){
                 this.ctx.globalAlpha = 0
                 this.ctx.stroke()
@@ -107,29 +108,26 @@ export class Cn{
         // drawBG
         if (this.slide.bgShp!=null){
             this.shape = this.slide.bgShp
+            this.getCrd()
+            this.rect()
         }
         // this.bg()
-        this.rect()
-
-        // let sp = this.slide.getShapeById("5")
-        // if(sp !=undefined){
-        //     this.shape = sp
-        //     this.rect()
-        // }
-        // let sp = this.slide.getShapeByName("Rectangle 4")
-        // console.log(sp)
-        // if(sp !=undefined){
-        //     this.shape = sp
-        //     this.rect()
-        // }
+        
 
         for (let sp of this.slide.shapes){
             this.shape = sp
+            this.getCrd()
             if(sp.prstGeom=='rect'){
                 this.rect()
             }
             if(sp.prstGeom=='triangle'){
                 this.triangle()
+            }
+            if(sp.prstGeom=='roundRect'){
+                this.drawRoundedRect()
+            }
+            if(sp.prstGeom=='ellipse'){
+                this.ellipse()
             }
             
         }
@@ -145,7 +143,6 @@ export class Cn{
     }
 
     rect(){
-        this.getCrd()
         this.ctx?.beginPath()
         this.ctx?.moveTo(this.x,this.y)
         this.ctx?.lineTo(this.cx, this.y)
@@ -156,8 +153,36 @@ export class Cn{
         this.stroke()       
     }
 
+    drawRoundedRect() {
+        let radRatio = 1
+        if(this.shape.guide.length>0){
+            if(this.shape.guide[0].name == 'adj'){
+                let fmla = this.shape.guide[0].fmla
+                if(fmla.includes('val')){
+                    radRatio = parseInt(fmla.split(' ')[1])/100000
+                }
+            }            
+        }
+        let height = this.cy-this.y
+        let width = this.cx-this.x
+        let radius = Math.floor(Math.min(height,width)*radRatio)
+        this.ctx?.beginPath();
+        // Top left corner
+        this.ctx?.moveTo(this.x + radius, this.y);
+        // Top edge and top right corner
+        this.ctx?.arcTo(this.x +width, this.y, this.x + width, this.y + height, radius);
+        // Right edge and bottom right corner
+        this.ctx?.arcTo(this.x + width, this.y + height, this.x, this.y + height, radius);
+        // Bottom edge and bottom left corner
+        this.ctx?.arcTo(this.x, this.y + height, this.x, this.y, radius);
+        // Left edge and top left corner
+        this.ctx?.arcTo(this.x, this.y, this.x + width, this.y, radius);
+        this.ctx?.closePath();
+        this.fill()
+        this.stroke()
+      }
+
     triangle(){
-        this.getCrd()
         let pos:any = 0.5
         if(this.shape.guide.length>0){
             if(this.shape.guide[0].name == 'adj'){
@@ -165,10 +190,8 @@ export class Cn{
                 if(fmla.includes('val')){
                     pos = parseInt(fmla.split(' ')[1])/100000
                 }
-            }
-            
+            }            
         }
-        console.log(pos)
         let x2 = this.x + ((this.cx-this.x)*pos)
         this.ctx?.beginPath();
         this.ctx?.moveTo(this.x, this.cy); // Move to the first vertex
@@ -177,6 +200,25 @@ export class Cn{
         this.ctx?.closePath();    // Close the path to complete the triangle
         this.fill()
         this.stroke()
+    }
+
+    ellipse(){
+        const radiusX = (this.cx-this.x)/2; // Horizontal radius
+        const radiusY = (this.cy-this.y)/2;  // Vertical radius
+        const centerX = this.x +radiusX; // X coordinate of the center
+        const centerY = this.y + radiusY; // Y coordinate of the center
+        const rotation = 0;  // Rotation in radians (0 for no rotation)
+        const startAngle = 0; // Start angle in radians
+        const endAngle = 2 * Math.PI; // End angle in radians (full ellipse)
+        const anticlockwise = false; // Direction of drawing (false for clockwise)
+
+        // Draw the ellipse
+        this.ctx?.beginPath();
+        this.ctx?.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
+        this.ctx?.closePath();
+        this.fill()
+        this.stroke()
+
     }
     drawSlide(){
         // 1. get Color Map

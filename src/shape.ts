@@ -120,7 +120,28 @@ export class Shape{
                             this.lnFillPro=true                  
                         }
                         if(lnElements[el1]['name']=='a:prstDash'){
-                            this.stroke.dash = lnElements[el1]['attributes']['val']                
+                            if(lnElements[el1]['attributes']['val']=='dash'){
+                                this.stroke.dash = [5,5]
+                            }else if(lnElements[el1]['attributes']['val']=='lgDash'){
+                                this.stroke.dash = [10,5]
+                            }else if(lnElements[el1]['attributes']['val']=='solid'){
+                                this.stroke.dash = []
+                            }else if(lnElements[el1]['attributes']['val']=='sysDot'){
+                                this.stroke.dash = [1,1]
+                            }else if(lnElements[el1]['attributes']['val']=='sysDash'){
+                                this.stroke.dash = [5,2]
+                            }else if(lnElements[el1]['attributes']['val']=='sysDashDot'){
+                                this.stroke.dash = [5,2,1,2]
+                            }else if(lnElements[el1]['attributes']['val']=='sysDashDotDot'){
+                                this.stroke.dash = [5,2,1,2,1,2]
+                            }else if(lnElements[el1]['attributes']['val']=='dot'){
+                                this.stroke.dash = [1,2]
+                            }else if(lnElements[el1]['attributes']['val']=='lgDashDot'){
+                                this.stroke.dash = [10,5,1,5]
+                            }else if(lnElements[el1]['attributes']['val']=='lgDashDotDot'){
+                                this.stroke.dash = [10,5,1,5,1,5]
+                            }
+
                         }
                         // round (todo)
                         // custDash(todo)
@@ -196,52 +217,7 @@ export class Shape{
         }
     }
 
-    getShapeProps():ShapeProp{
-        
-        this.props.pos ={}
-        // this.props.pos.x=getNested(this._shapes,'p:spPr','a:xfrm','a:off','@_x')
-        // this.props.pos.y=getNested(this._shapes,'p:spPr','a:xfrm','a:off','@_y')
-        // this.props.pos.h=getNested(this._shapes,'p:spPr','a:xfrm','a:ext','@_cx')
-        // this.props.pos.w=getNested(this._shapes,'p:spPr','a:xfrm','a:ext','@_cy')
-        // this.props.prstGeom = getNested(this._shapes,'p:spPr','a:prstGeom','@_prst')
-        // this._props.ln_prstDash = this.getNested(this._shapes,'p:spPr','a:ln','a:prstDash','@_val')
-        // this._props.solidFill = this.getNested(this._shapes,'p:spPr','a:solidFill','a:srgbClr','@_val')
-
-        // this._props.txt_vert = this.getNested(this._shapes,'p:txBody','a:bodyPr','@_vert')
-        // this._props.txt_anchor = this.getNested(this._shapes,'p:txBody','a:bodyPr','@_anchor')
-        // this._props.txt_par = this.getNested(this._shapes,'p:txBody','a:p','a:r','a:t')
-        // this._props.txt_parLlvs = []
-        // if(typeof this.getNested(this._shapes,'p:txBody','a:p','a:r','a:t')=='undefined'){
-        //     let lvls = this.getNested(this._shapes,'p:txBody','a:p')
-        //     for(let lvl in lvls){
-        //         let txt = this.getNested(lvls[lvl],'a:r','a:t')
-        //         this._props.txt_parLlvs.push(txt)   
-        //     }
-                
-        // }
-        // this.props.style={}
-        // // console.log(this.getNested(this.shapes,'p:style','a:lnRef'))
-        // if(typeof this.getNested(this.shapes,'p:style','a:lnRef','@_idx')!='undefined'){
-        //     this.props.style.lnRef_idx = this.getNested(this.shapes,'p:style','a:lnRef','@_idx')
-        //     this.props.style.lnRef_schemeClr = this.getNested(this.shapes,'p:style','a:lnRef','a:schemeClr', '@_val')
-        //     this.props.style.lnRef_schemeClr_shade = this.getNested(this.shapes,'p:style','a:lnRef','a:schemeClr','a:shade', '@_val')
-
-        //     this.props.style.fillRef_idx = this.getNested(this.shapes,'p:style','a:fillRef','@_idx')
-        //     this.props.style.fillRef_schemeClr = this.getNested(this.shapes,'p:style','a:fillRef','a:schemeClr', '@_val')
-        //     this.props.style.fillRef_schemeClr_shade = this.getNested(this.shapes,'p:style','a:fillRef','a:schemeClr','a:shade', '@_val')
-
-        //     this.props.style.effectRef_idx = this.getNested(this.shapes,'p:style','a:effectRef','@_idx')
-        //     this.props.style.effectRef_schemeClr = this.getNested(this.shapes,'p:style','a:effectRef','a:schemeClr', '@_val')
-        //     this.props.style.effectRef_schemeClr_shade = this.getNested(this.shapes,'p:style','a:effectRef','a:schemeClr','a:shade', '@_val')
-
-        //     this.props.style.fontRef_idx = this.getNested(this.shapes,'p:style','a:fontRef','@_idx')
-        //     this.props.style.fontRef_schemeClr = this.getNested(this.shapes,'p:style','a:fontRef','a:schemeClr', '@_val')
-        //     this.props.style.fontRef_schemeClr_shade = this.getNested(this.shapes,'p:style','a:fontRef','a:schemeClr','a:shade', '@_val')
-        // }
-        
-        return this.props
-        
-    }
+    
 
 
 

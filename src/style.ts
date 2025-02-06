@@ -410,7 +410,7 @@ export class Stroke{
     cap = ""
     cmpd = ""
     algn =""
-    dash = ""
+    dash:any = []
     fill =new Fill()
     hEnd ={len:"",type:"", wid:""}
     // len/wid:"Large(lg), Medium(med), Small(sm) "
