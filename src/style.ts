@@ -1,5 +1,5 @@
 import { parse } from 'path';
-import {BGtype} from './interface';
+import {BGtype, HAlign} from './interface';
 import {getbyPath} from './util'
 
 
@@ -448,6 +448,195 @@ export class ImageFill{
     getImg():any{
         return this.img
     }
+}
+
+export class Text{
+    private textObj:any
+    private clrMap:any
+    private theme:any
+    private val:any
+    private font:any
+    private size:any
+    private clr:any
+    private bold:boolean=false
+    private italic:boolean=false
+    private underline:boolean=false
+    private strike:boolean=false
+    private kerning:any
+    private baseline:any
+    private fill:any
+    private lnSpc:any
+    private spcBef:any
+    private spcAft:any
+    private spcAftLines:any
+    private spcBefLines:any
+    private algn:any
+    private marL:any
+    private marR:any
+    private marT:any
+    private marB:any
+    private indent:any
+    private rtl:any
+    private bdr:any
+    private shdw:any
+    private ln:any
+    private lnSpcRule:any
+    private lnSpcMult:any
+    private lnSpcBef:any
+    private lnSpcAft:any
+    private lnSpcBefLines:any
+    private lnSpcAftLines:any
+    private lnSpcLine:any
+    private lnSpcLineRule:any
+    private lnSpcLineMult:any
+    private lnSpcLineBef:any
+    private lnSpcLineAft:any
+    private lnSpcLineBefLines:any
+    private lnSpcLineAftLines:any
+    private lnSpcPara:any
+    private lnSpcParaRule:any
+    private lnSpcParaMult:any
+    private lnSpcParaBef:any
+    private lnSpcParaAft:any
+    private lnSpcParaBefLines:any
+    private lnSpcParaAftLines:any
+    private lnSpcParaLine:any
+    private lnSpcParaLineRule:any
+    private lnSpcParaLineMult:any
+    private lnSpcParaLineBef:any
+    private lnSpcParaLineAft:any
+    private lnSpcParaLineBefLines:any
+    private lnSpcParaLineAftLines:any
+    private lnSpcParaLineAfterLines:any
+}
+export class Paragraph{
+  align:HAlign ="left"
+
+  marL:number = 0
+  marR:number = 0
+  indent:number = 0
+  txtRun:TxtRun[] = []
+  objP:any
+  type:string = ""
+  constructor(){}
+  set obj(obj:any){
+    this.objP = obj
+    for(let el in obj['elements']){
+      // paragratph properties
+      if(obj['elements'][el]['name']=='a:pPr'){
+        let aln = obj['elements'][el]['attributes']['algn']
+        if(aln!=null){
+          this.align = aln
+        }
+        let marL = obj['elements'][el]['attributes']['marL']
+        if(marL!=null){
+          this.marL = parseInt(marL)
+        }
+        let marR = obj['elements'][el]['attributes']['marR']
+        if(marR!=null){
+          this.marR = parseInt(marR)
+        }
+        let indent = obj['elements'][el]['attributes']['indent']
+        if(indent!=null){
+          this.indent = parseInt(indent)
+        }
+        
+      }
+      // text runs
+      if(obj['elements'][el]['name']=='a:r'){
+        let txtRun = new TxtRun()
+        for(let el2 in obj['elements'][el]['elements']){
+          if(obj['elements'][el]['elements'][el2]['name']=='a:rPr'){
+            let rPr = obj['elements'][el]['elements'][el2]
+            let lang = rPr['attributes']['lang']
+            if(lang!=null){
+              txtRun.lang = lang
+            }
+            let b = rPr['attributes']['b']
+            if(b!=null){
+              txtRun.bold = true
+            }
+            let i = rPr['attributes']['i']
+            if(i!=null){
+              txtRun.italic = true
+            }
+            let u = rPr['attributes']['u']
+            if(u!=null){
+              txtRun.underline = true
+            }
+            let strike = rPr['attributes']['strike']
+            if(strike!=null){
+              txtRun.strike = true
+            }
+            let baseline = rPr['attributes']['baseline']
+            if(baseline!=null){
+              txtRun.baseline = parseInt(baseline)
+            }
+            let sz = rPr['attributes']['sz']
+            if(sz!=null){
+              txtRun.size = parseInt(sz)/100
+            }
+            let font = rPr['attributes']['latin']
+            if(font!=null){
+              txtRun.font = font
+            }
+            let fill = getbyPath(rPr, 'a:solidFill')
+            if(fill!=null){
+              txtRun.fill = new Fill(fill)
+            }
+            for (let el3 in rPr['elements']){
+              if(rPr['elements'][el3]['name']=='a:latin'){
+                let font = rPr['elements'][el3]['attributes']['typeface']
+                if(font!=null){
+                  txtRun.font = font
+                }
+              }
+            }
+          }
+          if(obj['elements'][el]['elements'][el2]['name']=='a:br'){
+            txtRun.txt += '\n'
+          }
+          if(obj['elements'][el]['elements'][el2]['name']=='a:tab'){
+            txtRun.txt += '\t'
+          }
+          if(obj['elements'][el]['elements'][el2]['name']=='a:lnBrk'){
+            txtRun.txt += '\n'
+          }
+          if(obj['elements'][el]['elements'][el2]['name']=='a:t'){
+            if('elements' in obj['elements'][el]['elements'][el2]){
+              let txt = obj['elements'][el]['elements'][el2]['elements'][0]['text']
+              if(txt!=null){
+                txtRun.txt += txt
+              }
+              let txtType = obj['elements'][el]['elements'][el2]['elements'][0]['type']
+              if(txtType!=null){
+                this.type= txtType
+              }
+            }
+          }
+
+        }
+        this.txtRun.push(txtRun)
+      }
+    
+    
+    }
+  }
+}
+export class TxtRun{
+  bold:boolean = false
+  italic:boolean = false
+  underline:boolean = false
+  strike:boolean = false
+  kerning:number = 0
+  baseline:number = 0
+  lang:string = ""
+  fill:Fill|undefined
+  size:number = 0
+  font:string = ""
+  txt:string = ""
+  constructor(){
+  }
 }
 
 

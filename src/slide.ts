@@ -1,6 +1,6 @@
 import {getNested,getbyPath} from './util'
 import {Shape} from './shape'
-import { Fill,Color } from './style'
+import { Fill,Color, Stroke } from './style'
 
 
 
@@ -82,7 +82,7 @@ export class Slides{
 export class Slide{
     private _slideObj:any
     bgShp:Shape|undefined
-    private type = 'slide'
+    type = 'slide'
     clrMap:any
     master:Slide|undefined
     layout:Slide|undefined
@@ -153,6 +153,8 @@ export class Slide{
             src = 'master'
         }
         this.bgShp= new Shape(0,0,this.width, this.height)
+        this.bgShp.fill = new Fill()
+        this.bgShp.stroke = new Stroke()
         this.bgShp.src = src
         this.bgShp.stroke.fill.fillType='noFill'
         if(bg['elements'][0]['name'] == 'p:bgPr'){ 
@@ -276,6 +278,22 @@ export class Slide{
             if (sp.id == ShapeID){
                 return sp
             }
+        }
+        return undefined
+    }
+
+    getShapebyPh(ph:string,idx?:number):Shape|undefined{
+        for (let sp of this.shapes){
+            if(idx == undefined){
+                if (sp.phType == ph){
+                    return sp
+                }
+            }else{
+                if (sp.phType == ph && sp.idx == idx){
+                    return sp
+                }
+            }
+            
         }
         return undefined
     }

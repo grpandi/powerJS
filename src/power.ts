@@ -296,6 +296,7 @@ export class Pjs{
           let fname:any = f.split('/').pop()
           let a = await this._zip.files[f].async('text').then((txt:string)=>{return(xml2js(txt,{compact:false}));})
           let slide = this.Slides[fname] as Slide
+          console.log(fname)
           slide.obj = a
         }
       }

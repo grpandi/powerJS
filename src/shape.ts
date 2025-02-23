@@ -1,6 +1,6 @@
 
 import {PreSetGeom, ShapeProp} from './interface'
-import {Fill, Stroke, Color} from './style'
+import {Fill, Stroke, Color, Paragraph} from './style'
 import {getbyPath} from './util'
 import { Slide } from './slide';
 
@@ -11,18 +11,17 @@ export class Shape{
     // - 914400 EMUs is 1 inch
     _shapes:any={};
     props: ShapeProp = {pos: {x:0, y:0, h:0, w:0},prstGeom:'rect'};
-    private spPr=false
     private posProp=false
-    private fillProp=false
-    private lnProp=false
-    private lnFillPro=false
-    fill:Fill = new Fill()
-    stroke:Stroke = new Stroke()
+    fill!:Fill
+    stroke!:Stroke
     effectFill:Fill|undefined
     fontFill:Fill|undefined
+    txtAnchor = 't'
     src = 'slide'
     name = ""
     id = ""
+    phType =""
+    idx =0
     private slideRef:Slide|undefined
     private Spobj:any
     private groupid=""
@@ -33,6 +32,7 @@ export class Shape{
     w=0
     prstGeom:PreSetGeom='rect'
     guide:any = []
+    paragraph:Paragraph[] = []
      
     constructor(x:number=0,y:number=0,w:number=0,h:number=0){
         this.x=x;this.y=y;this.h=h;this.w=w
@@ -50,12 +50,15 @@ export class Shape{
             this.id = nvPr['attributes']['id']
             // 'Hidden' attribute?
         }
+        let ph:any = getbyPath(obj,"p:sp/p:nvSpPr/p:nvPr/p:ph")
+        if(ph!=null){
+            this.phType = ph['attributes']['type']
+        }
         let spPr:any = getbyPath(obj,'p:sp/p:spPr')
         // console.log(spPr)
         if(spPr!=null){
             for(let el in spPr['elements']){
                 // console.log(el)
-                this.spPr=true
                 if(spPr['elements'][el]['name']=='a:xfrm'){
                     let aOff:any = getbyPath(spPr['elements'][el],'a:xfrm/a:off')
                     if(aOff !=null){
@@ -71,20 +74,16 @@ export class Shape{
                 }
                 // line fill props
                 if(spPr['elements'][el]['name']=='a:solidFill'){
-                    this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)
-                    this.fillProp=true                   
+                    this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)                 
                 }
                 if(spPr['elements'][el]['name']=='a:blipFill'){
-                    this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)
-                    this.fillProp=true                   
+                    this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)                  
                 }
                 if(spPr['elements'][el]['name']=='a:gradFill'){
-                    this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)
-                    this.fillProp=true                 
+                    this.fill = new Fill(spPr['elements'][el],this.slideRef?.clrMap,this.slideRef?.theme)                
                 }
                 if(spPr['elements'][el]['name']=='a:noFill'){
-                    this.fill.fillType="noFill"
-                    this.fillProp=true                 
+                    this.fill.fillType="noFill"               
                 }
                 // preset geometry
                 if(spPr['elements'][el]['name']=='a:prstGeom'){
@@ -104,20 +103,17 @@ export class Shape{
 
                 // outLine
                 if(spPr['elements'][el]['name']=='a:ln'){
-                    this.lnProp=true
                     let lnElements = spPr['elements'][el]['elements']
+                    this.stroke = new Stroke()
                     for (let el1 in lnElements ){
                         if(lnElements[el1]['name']=='a:solidFill'){
-                            this.stroke.fill = new Fill(lnElements[el1],this.slideRef?.clrMap,this.slideRef?.theme)
-                            this.lnFillPro=true                   
+                            this.stroke.fill = new Fill(lnElements[el1],this.slideRef?.clrMap,this.slideRef?.theme)                  
                         }
                         if(lnElements[el1]['name']=='a:gradFill'){
-                            this.stroke.fill = new Fill(lnElements[el1],this.slideRef?.clrMap,this.slideRef?.theme)
-                            this.lnFillPro=true                   
+                            this.stroke.fill = new Fill(lnElements[el1],this.slideRef?.clrMap,this.slideRef?.theme)                 
                         }                        
                         if(lnElements[el1]['name']=='a:noFill'){
-                            this.stroke.fill.fillType="noFill"
-                            this.lnFillPro=true                  
+                            this.stroke.fill.fillType="noFill"                 
                         }
                         if(lnElements[el1]['name']=='a:prstDash'){
                             if(lnElements[el1]['attributes']['val']=='dash'){
@@ -169,7 +165,7 @@ export class Shape{
                                 
 
             }
-        }else{this.spPr=false}
+        }
 
         let spStyle:any = getbyPath(obj,'p:sp/p:style')
         if(spStyle!=null){
@@ -177,20 +173,20 @@ export class Shape{
 
                 // line fill (set if it is not set previously)
                 if(spStyle['elements'][el]['name']=='a:lnRef'){
-                    if(this.lnFillPro!=true){
+                    if(this.stroke==undefined){
+                        this.stroke=new Stroke()
                         let color = new Color(spStyle['elements'][el]['elements'][0],this.slideRef?.clrMap,this.slideRef?.theme)
                         this.stroke.fill.fillType="solidFill"
                         this.stroke.fill.fillVal = color.getColor()
-                        this.lnFillPro=true
                     }                                       
                 }
                 // shp fill (set if not set previoustly)
                 if(spStyle['elements'][el]['name']=='a:fillRef'){
-                    if(this.fillProp!=true){
+                    if(this.fill==undefined){
+                        this.fill = new Fill()
                         let color = new Color(spStyle['elements'][el]['elements'][0],this.slideRef?.clrMap,this.slideRef?.theme)
                         this.fill.fillType="solidFill"
                         this.fill.fillVal=color.getColor()
-                        this.fillProp=true
                     }                                       
                 }
                 // font fill
@@ -208,13 +204,98 @@ export class Shape{
 
             }   
         }
-
-        
-
         let txtBody:any = getbyPath(obj,'p:sp/p:txBody')
         if(txtBody!=null){
-            
+            for (let el in txtBody['elements']){
+                if(txtBody['elements'][el]['name']=='a:bodyPr'){
+                    if(txtBody['elements'][el]['attributes']){
+                        let txtAnchor = txtBody['elements'][el]['attributes']['anchor']
+                        if(txtAnchor!=null){this.txtAnchor=txtAnchor}
+                    }
+                }
+                if(txtBody['elements'][el]['name']=='a:lstStyle'){
+                    // console.log(txtBody['elements'][el])
+                }
+                if(txtBody['elements'][el]['name']=='a:p'){
+                    let p = new Paragraph()
+                    p.obj = txtBody['elements'][el]
+                    this.paragraph.push(p)
+                }
+            }
         }
+
+        if(this.slideRef?.type=='slide'){
+            // default fill
+            if (this.fill==undefined){
+                let layoutSp = this.slideRef?.layout?.getShapebyPh(this.phType)
+                if(layoutSp!=undefined){
+                    this.fill = layoutSp.fill
+                }if(this.fill==undefined){
+                    let mstrSp = this.slideRef?.layout?.master?.getShapebyPh(this.phType)
+                    if(mstrSp!=undefined){
+                        this.fill = mstrSp.fill
+                    }   
+                }if(this.fill==undefined){
+                    this.fill = new Fill()
+                    this.fill.fillType='noFill'
+                }
+            }
+            // default stroke
+            if (this.stroke==undefined){
+                let layoutSp = this.slideRef?.layout?.getShapebyPh(this.phType)
+                if(layoutSp!=undefined){
+                    this.stroke = layoutSp.stroke
+                }if(this.stroke==undefined){
+                    let mstrSp = this.slideRef?.layout?.master?.getShapebyPh(this.phType)
+                    if(mstrSp!=undefined){
+                        this.stroke = mstrSp.stroke
+                    }
+                }if(this.stroke==undefined){
+                    this.stroke = new Stroke()
+                    this.stroke.fill.fillType='noFill'
+                }
+            }
+            // default font fill
+            if (this.fontFill==undefined){
+                let layoutSp = this.slideRef?.layout?.getShapebyPh(this.phType)
+                if(layoutSp!=undefined){
+                    this.fontFill = layoutSp.fontFill
+                }if(this.fontFill==undefined){
+                    let mstrSp = this.slideRef?.layout?.master?.getShapebyPh(this.phType)
+                    if(mstrSp!=undefined){
+                        this.fontFill = mstrSp.fontFill
+                    }
+                }if(this.fontFill==undefined){
+                    this.fontFill = new Fill()
+                    this.fontFill.fillType='solidFill'
+                    this.fontFill.fillVal='#000000'
+                }
+            }
+
+            // get Pos
+            if (this.posProp==false){
+                let layoutSp = this.slideRef?.layout?.getShapebyPh(this.phType)
+                if(layoutSp!=undefined){
+                    if(layoutSp.posProp==true){
+                        this.posProp=true
+                        this.x = layoutSp.x
+                        this.y = layoutSp.y
+                        this.w = layoutSp.w
+                        this.h = layoutSp.h
+                    }else{
+                        let mstrSp = this.slideRef?.layout?.master?.getShapebyPh(this.phType)
+                        if(mstrSp!=undefined && mstrSp.posProp==true){
+                            this.posProp=true
+                            this.x = mstrSp.x
+                            this.y = mstrSp.y
+                            this.w = mstrSp.w
+                            this.h = mstrSp.h
+                        }
+                    }
+                }
+            }
+        }
+        
     }
 
     
