@@ -261,7 +261,7 @@ export class Color{
       let clr:any = this.hexToRGB(hexclr)
       clr = this.rgbToHSL(clr.r, clr.g, clr.b)
       clr = this.HSLToHex(clr.h,clr.s, this.lumOff)
-      return hexclr
+      return clr
     }
     private addShader(hexclr:any){
       let clr:any = this.hexToRGB(hexclr)

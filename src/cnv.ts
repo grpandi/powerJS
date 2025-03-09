@@ -33,19 +33,22 @@ export class Cn{
         this.getCrd()
     }
 
-    fill(){
+    async fill(): Promise<void> {
+        return new Promise(async (resolve) => {
+        
         if(this.ctx!=null){
             if(this.shape.fill.getType()=="noFill"){
                 this.ctx.globalAlpha = 0
                 this.ctx.fill()
+                resolve();
             } 
             if(this.shape.fill.getType()=="solidFill"){
                 this.ctx.fillStyle=this.shape.fill.getVal()
                 this.ctx.globalAlpha = this.shape.fill.alpha;
                 this.ctx.fill()
+                resolve();
             }
             if(this.shape.fill.getType()=="gradientFill"){
-                this.getCrd()
                 let val:any = this.shape.fill.getVal()
                 let angle = val.linang * Math.PI / 180
                 let x2 = this.cx*Math.cos(angle)
@@ -59,26 +62,40 @@ export class Cn{
                 this.ctx.fillStyle=lineargradient
                 this.ctx.globalAlpha=this.shape.fill.alpha
                 this.ctx.fill()
+                resolve();
             }
             
             if(this.shape.fill.getType()=="imageFill"){
-                this.getCrd()
-                let imgId = this.shape.fill.getVal()
                 if(this.shape.src=='slide'){
-                    let img = new Image()
-                    img.crossOrigin = "anonymous"
-                    img.onload = () =>{
-                        if (this.ctx) {
-                            this.ctx.globalAlpha=this.shape.fill.alpha
-                            this.ctx.drawImage(img, this.x, this.y,this.cx,this.cy);
-                        }
-                    }
-                    img.src ="data:image/jpg;base64,"+ this.slide.images[imgId.src]
+                    let a = await this.loadImage()
+                    resolve();
                 }
                 
             }
+
         }
+        resolve();
+        });
         
+    }
+
+    async loadImage() {
+        return new Promise((resolve, reject) => {
+            let imgId = this.shape.fill.getVal()
+            let img = new Image()
+            img.crossOrigin = "anonymous"
+            img.onload = () =>{
+                if (this.ctx) {
+                    this.ctx.globalAlpha=this.shape.fill.alpha
+                    this.ctx.drawImage(img, this.x, this.y,this.cx,this.cy-this.y);
+                    resolve("Image loaded")
+                }
+            }
+            img.src ="data:image/jpg;base64,"+ this.slide.images[imgId.src]
+            img.onerror = (error) => {
+                reject(error); // Reject the promise if there's an error
+            };
+        });
     }
     stroke(){
         if(this.ctx!=null){
@@ -111,12 +128,12 @@ export class Cn{
 
     }
 
-    draw(){
+    async draw(){
         // drawBG
         if (this.slide.bgShp!=null){
             this.shape = this.slide.bgShp
             this.getCrd()
-            this.rect()
+            await this.rect()
         }
         // this.bg()
         
@@ -125,19 +142,19 @@ export class Cn{
             this.shape = sp
             this.getCrd()
             if(sp.prstGeom=='rect'){
-                this.rect()
+                await this.rect()
                 this.drawText()
             }
             if(sp.prstGeom=='triangle'){
-                this.triangle()
+                await this.triangle()
                 this.drawText()
             }
             if(sp.prstGeom=='roundRect'){
-                this.drawRoundedRect()
+                await this.drawRoundedRect()
                 this.drawText()
             }
             if(sp.prstGeom=='ellipse'){
-                this.ellipse()
+                await this.ellipse()
                 this.drawText()
             }
             
@@ -154,18 +171,22 @@ export class Cn{
         this.cy = this.y + Math.floor((this.shape.h*this.heightRatio))
     }
 
-    rect(){
-        this.ctx?.beginPath()
-        this.ctx?.moveTo(this.x,this.y)
-        this.ctx?.lineTo(this.cx, this.y)
-        this.ctx?.lineTo(this.cx, this.cy)
-        this.ctx?.lineTo(this.x, this.cy)
-        this.ctx?.closePath()
-        this.fill()
-        this.stroke()       
+    async rect(): Promise<void> {
+        return new Promise(async (resolve) => {
+            this.ctx?.beginPath()
+            this.ctx?.moveTo(this.x,this.y)
+            this.ctx?.lineTo(this.cx, this.y)
+            this.ctx?.lineTo(this.cx, this.cy)
+            this.ctx?.lineTo(this.x, this.cy)
+            this.ctx?.closePath()
+            await this.fill()
+            this.stroke()
+            resolve();
+        });
     }
 
-    drawRoundedRect() {
+    async drawRoundedRect():Promise<void>{
+        return new Promise(async (resolve) => {
         let radRatio = 1
         if(this.shape.guide.length>0){
             if(this.shape.guide[0].name == 'adj'){
@@ -190,11 +211,14 @@ export class Cn{
         // Left edge and top left corner
         this.ctx?.arcTo(this.x, this.y, this.x + width, this.y, radius);
         this.ctx?.closePath();
-        this.fill()
+        await this.fill()
         this.stroke()
+        resolve();
+        });
       }
 
-    triangle(){
+    async triangle():Promise<void>{
+        return new Promise(async (resolve) => {
         let pos:any = 0.5
         if(this.shape.guide.length>0){
             if(this.shape.guide[0].name == 'adj'){
@@ -210,11 +234,14 @@ export class Cn{
         this.ctx?.lineTo(x2, this.y); // Draw a line to the second vertex
         this.ctx?.lineTo(this.cx, this.cy); // Draw a line to the third vertex
         this.ctx?.closePath();    // Close the path to complete the triangle
-        this.fill()
+        await this.fill()
         this.stroke()
+        resolve();
+        });
     }
 
-    ellipse(){
+    async ellipse():Promise<void>{
+        return new Promise(async (resolve) => {
         const radiusX = (this.cx-this.x)/2; // Horizontal radius
         const radiusY = (this.cy-this.y)/2;  // Vertical radius
         const centerX = this.x +radiusX; // X coordinate of the center
@@ -228,11 +255,12 @@ export class Cn{
         this.ctx?.beginPath();
         this.ctx?.ellipse(centerX, centerY, radiusX, radiusY, rotation, startAngle, endAngle, anticlockwise);
         this.ctx?.closePath();
-        this.fill()
+        await this.fill()
         this.stroke()
-
+        resolve()
+        });
     }
-    drawSlide(){
+    async drawSlide(){
         // 1. get Color Map
         let clrMap = this.slide.clrMap
         if(clrMap==null){
@@ -530,6 +558,12 @@ export class Cn{
         this.ctx.lineTo(endX, endY);
         this.ctx.stroke();
     };
+
+    wait(ms: number): Promise<void> {
+        return new Promise((resolve) => {
+            setTimeout(resolve, ms); // Resolve the Promise after `ms` milliseconds
+        });
+    }
 
   
 
